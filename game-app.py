@@ -20,7 +20,16 @@ class ButtonPanel(wx.Panel):
 class LogPanel(wx.Panel):
   def __init__(self, parent):
     wx.Panel.__init__(self, parent, wx.NewId())
-    self.text_field = wx.TextCtrl(self, value="Test"*100,
+    self.text_field = wx.TextCtrl(self, value="Log Test "*100,
+                                  style=wx.TE_READONLY | wx.TE_MULTILINE)
+    bsizer = wx.BoxSizer()
+    bsizer.Add(self.text_field, 1, wx.EXPAND)
+    self.SetSizerAndFit(bsizer)
+
+class EncounterPanel(wx.Panel):
+  def __init__(self, parent):
+    wx.Panel.__init__(self, parent, wx.NewId())
+    self.text_field = wx.TextCtrl(self, value="Encounter Test "*100,
                                   style=wx.TE_READONLY | wx.TE_MULTILINE)
     bsizer = wx.BoxSizer()
     bsizer.Add(self.text_field, 1, wx.EXPAND)
@@ -28,7 +37,7 @@ class LogPanel(wx.Panel):
 
 class MainWindow(wx.Frame):
   def __init__(self, parent, title):
-    wx.Frame.__init__(self, parent, title=title)   # size=(-1,-1)?
+    wx.Frame.__init__(self, parent, title=title, size=(1000,600))   # size=(-1,-1)?
     self.status_bar = self.CreateStatusBar(3)
     self.status_bar.SetStatusText("Welcome to SRS Game")
     self.status_bar.SetStatusText("AP: 0", 1)
@@ -46,10 +55,16 @@ class MainWindow(wx.Frame):
     # Events
     self.Bind(wx.EVT_MENU, self.OnExit, menu_exit)
     #self.sizer = wx.GridSizer(rows=1, cols=2, hgap=5, vgap=5)
-    self.top_sizer = wx.BoxSizer(wx.HORIZONTAL)
+    self.top_sizer = wx.BoxSizer(wx.HORIZONTAL)   # Top level
+
+    self.left_sizer = wx.BoxSizer(wx.VERTICAL)
     self.button_panel = ButtonPanel(self)
+    self.encounter_panel = EncounterPanel(self)
+    self.left_sizer.Add(self.encounter_panel, 4, wx.EXPAND)
+    self.left_sizer.Add(self.button_panel, 1)
+
+    self.top_sizer.Add(self.left_sizer, 1)
     self.log_panel = LogPanel(self)
-    self.top_sizer.Add(self.button_panel, 1)
     self.top_sizer.Add(self.log_panel, 1, wx.EXPAND)
     self.SetSizerAndFit(self.top_sizer)
 
