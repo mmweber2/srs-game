@@ -1,5 +1,8 @@
-import wx
+# pylint: disable=missing-docstring
+# TODO: Get rid of that pylint
+
 import time
+import wx
 
 class ButtonPanel(wx.Panel):
   def __init__(self, parent):
@@ -63,34 +66,40 @@ class MainWindow(wx.Frame):
 
     self.top_sizer = wx.BoxSizer(wx.HORIZONTAL)   # Top level
 
+    # Left side, containing the encounter panel and the button panel
     self.left_sizer = wx.BoxSizer(wx.VERTICAL)
     self.button_panel = ButtonPanel(self)
     self.encounter_panel = EncounterPanel(self)
     self.left_sizer.Add(self.encounter_panel, 4, wx.EXPAND)
     self.left_sizer.Add(self.button_panel, 1)
 
+    # For now, only the log_panel is on the right side.
+    # Eventually, we'd have a right_sizer containing it
     self.top_sizer.Add(self.left_sizer, 1)
     self.log_panel = LogPanel(self)
     self.top_sizer.Add(self.log_panel, 1, wx.EXPAND)
     self.SetSizerAndFit(self.top_sizer)
 
     # Events
-    self.Bind(wx.EVT_MENU, self.OnExit, menu_exit)
+    self.Bind(wx.EVT_MENU, self.on_exit, menu_exit)
     for i in range(len(self.button_panel.buttons)):
       button = self.button_panel.buttons[i]
       button_name = self.button_panel.button_names[i]
       button.Bind(wx.EVT_BUTTON,
-                  lambda e, name=button_name: self.button_press(e, name))
+                  lambda evt, name=button_name: self.button_press(evt, name))
 
     self.Show()
 
-  def button_press(self, e, name):
+  def button_press(self, evt, name):  # pylint: disable=unused-argument
     self.log_panel.add_entry(name)
 
-  def OnExit(self, e):
+  def on_exit(self, evt):  # pylint: disable=unused-argument
     self.Close(True)
 
+def run_app():
+  wx_app = wx.App(False)
+  wx_frame = MainWindow(None, "SRS Game")  # pylint: disable=unused-variable
+  wx_app.MainLoop()
+
 if __name__ == "__main__":
-  app = wx.App(False)
-  frame = MainWindow(None, "SRS Game")
-  app.MainLoop()
+  run_app()
