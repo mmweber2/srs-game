@@ -39,7 +39,7 @@ class CharacterPanel(wx.Panel):
     self.SetSizerAndFit(bsizer)
 
   def update_character(self, game_state):
-    pass
+    self.text_field.SetValue(str(game_state.character))
 
 class LogPanel(wx.Panel):
   def __init__(self, parent):
@@ -123,6 +123,7 @@ class MainWindow(wx.Frame):
     for log in logs:
       self.log_panel.add_entry(log)
     self.status_bar.SetStatusText(self.game_state.state, 0)
+    self.char_panel.update_character(self.game_state)
 
   def on_exit(self, evt):  # pylint: disable=unused-argument
     self.Close(True)

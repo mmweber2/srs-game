@@ -17,6 +17,8 @@ class GameState(object):
       self.character.make_initial_equipment(self.get_choices()[choice])
       logs.append("Generated %s equipment." % self.get_choices()[choice])
       self.state = "START_GAME"
+      # START HERE: Set other game state items, starting tower at level 1,
+      #             generating tower rooms, and so on.
     else:
       assert False
     return logs

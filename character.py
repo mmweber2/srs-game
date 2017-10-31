@@ -11,7 +11,21 @@ class Character(object):
     for i in range(len(self.equipment)):
       self.equipment[i] = Equipment.get_new_armor(1, slot=i, require=choice)
 
-  def get_ui_string(self):
-    pass
+  def __str__(self):
+    pieces = []
+    pieces.append("Character:\n")
+    for stat in self.stats:
+      pieces.append("%s: %d (%d)\n" % (stat, self.get_effective_stat(stat),
+                                     self.stats[stat]))
+    pieces.append("Equipment:\n")
+    for piece in self.equipment:
+      pieces.append(str(piece) + "\n")
+    return "".join(pieces)
 
+  def get_effective_stat(self, stat):
+    value = self.stats[stat]
+    for piece in self.equipment:
+      if piece:
+        value += piece.get_stat_value(stat)
+    return value
 
