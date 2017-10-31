@@ -23,6 +23,22 @@ class ButtonPanel(wx.Panel):
     self.SetAutoLayout(1)
     self.button_sizer.Fit(self)
 
+  def set_labels(self, labels):
+    for i in range(4):
+      self.buttons[i].SetLabel(labels[i])
+
+class CharacterPanel(wx.Panel):
+  def __init__(self, parent):
+    wx.Panel.__init__(self, parent, wx.NewId())
+    self.text_field = wx.TextCtrl(self, value="",
+                                  style=wx.TE_READONLY | wx.TE_MULTILINE)
+    bsizer = wx.BoxSizer(wx.VERTICAL)
+    bsizer.Add(self.text_field, 1, wx.EXPAND)
+    self.SetSizerAndFit(bsizer)
+
+  def update_character(self, game_state):
+    pass
+
 class LogPanel(wx.Panel):
   def __init__(self, parent):
     wx.Panel.__init__(self, parent, wx.NewId())
@@ -48,8 +64,9 @@ class EncounterPanel(wx.Panel):
     self.SetSizerAndFit(bsizer)
 
 class MainWindow(wx.Frame):
+  # pylint: disable=too-many-instance-attributes
   def __init__(self, parent, title):
-    wx.Frame.__init__(self, parent, title=title, size=(1000, 600))
+    wx.Frame.__init__(self, parent, title=title)
     self.status_bar = self.CreateStatusBar(3)
     self.status_bar.SetStatusText("Welcome to SRS Game")
     self.status_bar.SetStatusText("AP: 0", 1)
@@ -71,30 +88,39 @@ class MainWindow(wx.Frame):
     self.button_panel = ButtonPanel(self)
     self.encounter_panel = EncounterPanel(self)
     self.left_sizer.Add(self.encounter_panel, 4, wx.EXPAND)
-    self.left_sizer.Add(self.button_panel, 1)
+    self.left_sizer.Add(self.button_panel, 1, wx.EXPAND)
+
+    self.right_sizer = wx.BoxSizer(wx.VERTICAL)
+    self.char_panel = CharacterPanel(self)
+    self.log_panel = LogPanel(self)
+    self.right_sizer.Add(self.char_panel, 2, wx.EXPAND)
+    self.right_sizer.Add(self.log_panel, 1, wx.EXPAND)
 
     # For now, only the log_panel is on the right side.
     # Eventually, we'd have a right_sizer containing it
-    self.top_sizer.Add(self.left_sizer, 1)
-    self.log_panel = LogPanel(self)
-    self.top_sizer.Add(self.log_panel, 1, wx.EXPAND)
+    self.top_sizer.Add(self.left_sizer, 1, wx.EXPAND)
+    self.top_sizer.Add(self.right_sizer, 2, wx.EXPAND)
     self.SetSizerAndFit(self.top_sizer)
 
     # Events
     self.Bind(wx.EVT_MENU, self.on_exit, menu_exit)
     for i in range(len(self.button_panel.buttons)):
       button = self.button_panel.buttons[i]
-      button_name = self.button_panel.button_names[i]
       button.Bind(wx.EVT_BUTTON,
-                  lambda evt, name=button_name: self.button_press(evt, name))
+                  lambda evt, number=i: self.button_press(evt, number))
+
+    #self.game_state = GameState(self)
 
     self.Show()
 
-  def button_press(self, evt, name):  # pylint: disable=unused-argument
-    self.log_panel.add_entry(name)
+  def button_press(self, evt, number):  # pylint: disable=unused-argument
+    self.log_panel.add_entry(str(number))
 
   def on_exit(self, evt):  # pylint: disable=unused-argument
     self.Close(True)
+
+  def set_labels(self, labels):
+    self.button_panel.set_labels(labels)
 
 def run_app():
   wx_app = wx.App(False)
