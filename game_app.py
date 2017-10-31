@@ -1,8 +1,10 @@
 # pylint: disable=missing-docstring
 # TODO: Get rid of that pylint
 
+from game_state import GameState
 import time
 import wx
+
 
 class ButtonPanel(wx.Panel):
   def __init__(self, parent):
@@ -109,12 +111,18 @@ class MainWindow(wx.Frame):
       button.Bind(wx.EVT_BUTTON,
                   lambda evt, number=i: self.button_press(evt, number))
 
-    #self.game_state = GameState(self)
+    self.game_state = GameState()
+    self.set_labels(self.game_state.get_choices())
+    self.status_bar.SetStatusText(self.game_state.state, 0)
 
     self.Show()
 
   def button_press(self, evt, number):  # pylint: disable=unused-argument
-    self.log_panel.add_entry(str(number))
+    self.log_panel.add_entry("Debug: " + str(number))
+    logs = self.game_state.apply_choice(number)
+    for log in logs:
+      self.log_panel.add_entry(log)
+    self.status_bar.SetStatusText(self.game_state.state, 0)
 
   def on_exit(self, evt):  # pylint: disable=unused-argument
     self.Close(True)
