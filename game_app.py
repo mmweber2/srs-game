@@ -1,8 +1,7 @@
-# pylint: disable=missing-docstring
-# TODO: Get rid of that pylint
+# TODO: Get rid of pylint disables in pylintrc and fix
 
-from game_state import GameState
 import time
+from game_state import GameState
 import wx
 
 
@@ -65,6 +64,9 @@ class EncounterPanel(wx.Panel):
     bsizer.Add(self.text_field, 1, wx.EXPAND)
     self.SetSizerAndFit(bsizer)
 
+  def update(self, game_state):
+    self.text_field.SetValue(str(game_state.panel_text()))
+
 class MainWindow(wx.Frame):
   # pylint: disable=too-many-instance-attributes
   def __init__(self, parent, title):
@@ -105,15 +107,35 @@ class MainWindow(wx.Frame):
     self.SetSizerAndFit(self.top_sizer)
 
     # Events
+    # Bind the four buttons to the button_press method
     self.Bind(wx.EVT_MENU, self.on_exit, menu_exit)
     for i in range(len(self.button_panel.buttons)):
       button = self.button_panel.buttons[i]
       button.Bind(wx.EVT_BUTTON,
                   lambda evt, number=i: self.button_press(evt, number))
 
+    # TODO: This accepts multiple key presses from one key press when held,
+    #       which is not great.
+    # Bind u/d/l/r for our four buttons
+    bindings = [(wx.ACCEL_NORMAL, wx.WXK_UP, 0),
+                (wx.ACCEL_NORMAL, wx.WXK_DOWN, 3),
+                (wx.ACCEL_NORMAL, wx.WXK_LEFT, 1),
+                (wx.ACCEL_NORMAL, wx.WXK_RIGHT, 2)]
+    entries = []
+    for binding in bindings:
+      event_id = wx.NewId()
+      entries.append((binding[0], binding[1], event_id))
+      self.Bind(wx.EVT_BUTTON,
+                lambda evt, temp=binding[2]:
+                self.button_press(evt, temp), id=event_id)
+    accel_table = wx.AcceleratorTable(entries)
+    self.SetAcceleratorTable(accel_table)
+
+    # Update UI with initial game state
     self.game_state = GameState()
     self.set_labels(self.game_state.get_choices())
-    self.status_bar.SetStatusText(self.game_state.state, 0)
+    self.status_bar.SetStatusText(self.game_state.current_state(), 0)
+    self.encounter_panel.update(self.game_state)
 
     self.Show()
 
@@ -122,8 +144,11 @@ class MainWindow(wx.Frame):
     logs = self.game_state.apply_choice(number)
     for log in logs:
       self.log_panel.add_entry(log)
-    self.status_bar.SetStatusText(self.game_state.state, 0)
+    self.status_bar.SetStatusText(self.game_state.current_state(), 0)
+    # TODO: unify names here
     self.char_panel.update_character(self.game_state)
+    self.set_labels(self.game_state.get_choices())
+    self.encounter_panel.update(self.game_state)
 
   def on_exit(self, evt):  # pylint: disable=unused-argument
     self.Close(True)

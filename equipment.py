@@ -36,17 +36,18 @@ class Equipment(object):
     if require:
       attributes[require] = cls.make_stat_value(item_level, rarity)
       slots -= 1
-    for i in range(slots):
-      attributes[random.choice(STATS)] += cls.make_stat_value(item_level, rarity)
-    for d in DEFENSES:
-      attributes[d] = cls.make_stat_value(item_level, rarity)
+    for _ in range(slots):
+      attributes[random.choice(STATS)] += cls.make_stat_value(item_level,
+                                                              rarity)
+    for defense in DEFENSES:
+      attributes[defense] = cls.make_stat_value(item_level, rarity)
     return Equipment(item_level, attributes, slot, rarity)
 
   def __str__(self):
     pieces = []
     pieces.append(SLOTS[self.slot])
     pieces.append(":")
-    pieces.append("(%d %s)" % (self.item_level, RARITY[self.rarity][0]) )
+    pieces.append("(%d %s)" % (self.item_level, RARITY[self.rarity][0]))
     defense_pieces = []
     stat_pieces = []
     for attribute in self.attributes:
@@ -62,4 +63,3 @@ class Equipment(object):
     pieces.append("(%s)" % "/".join(defense_pieces))
     pieces.append(" ".join(stat_pieces))
     return " ".join(pieces)
-

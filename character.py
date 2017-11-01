@@ -16,7 +16,7 @@ class Character(object):
     pieces.append("Character:\n")
     for stat in self.stats:
       pieces.append("%s: %d (%d)\n" % (stat, self.get_effective_stat(stat),
-                                     self.stats[stat]))
+                                       self.stats[stat]))
     pieces.append("Equipment:\n")
     for piece in self.equipment:
       pieces.append(str(piece) + "\n")
@@ -28,4 +28,3 @@ class Character(object):
       if piece:
         value += piece.get_stat_value(stat)
     return value
-
