@@ -2,10 +2,11 @@ from equipment import Equipment
 
 class Character(object):
   def __init__(self):
-    # Helm, Chest, Legs, Accessory
-    self.equipment = [None, None, None, None]
+    # Weapon, Helm, Chest, Legs, Accessory
+    self.equipment = [None, None, None, None, None]
     self.stats = {"Strength": 20, "Stamina": 20, "Defense": 20, "Speed": 20,
                   "Intellect": 20, "Magic Defense": 20}
+    self.gold = 100
 
   def make_initial_equipment(self, choice):
     for i in range(len(self.equipment)):

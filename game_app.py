@@ -10,10 +10,8 @@ class ButtonPanel(wx.Panel):
     wx.Panel.__init__(self, parent, wx.NewId())
     # Buttons
     # TODO: Keybinds not in the label
-    # TODO: crosspad layout
     self.button_sizer = wx.GridSizer(rows=3, cols=3, hgap=5, vgap=5)
-    # TODO: Method to change button names
-    self.button_names = ["Button " + str(i) for i in range(4)]
+    self.button_names = [" " * 30 for _ in range(4)]
     self.buttons = []
     for i in range(4):
       self.button_sizer.Add(wx.StaticText(self))
@@ -27,6 +25,10 @@ class ButtonPanel(wx.Panel):
   def set_labels(self, labels):
     for i in range(4):
       self.buttons[i].SetLabel(labels[i])
+      if labels[i] == "":
+        self.buttons[i].Enable(False)
+      else:
+        self.buttons[i].Enable(True)
 
 class CharacterPanel(wx.Panel):
   def __init__(self, parent):
@@ -71,10 +73,11 @@ class MainWindow(wx.Frame):
   # pylint: disable=too-many-instance-attributes
   def __init__(self, parent, title):
     wx.Frame.__init__(self, parent, title=title)
-    self.status_bar = self.CreateStatusBar(3)
+    self.status_bar = self.CreateStatusBar(4)
     self.status_bar.SetStatusText("Welcome to SRS Game")
-    self.status_bar.SetStatusText("AP: 0", 1)
+    self.status_bar.SetStatusText("Energy: 0", 1)
     self.status_bar.SetStatusText("GP: 0", 2)
+    self.status_bar.SetStatusText("Time: 0", 3)
 
     # Make menus
     # TODO: Not working
@@ -140,15 +143,23 @@ class MainWindow(wx.Frame):
     self.Show()
 
   def button_press(self, evt, number):  # pylint: disable=unused-argument
+    if not self.button_panel.buttons[number].IsEnabled():
+      self.log_panel.add_entry("Debug: " + str(number) + " not enabled")
+      return   # TODO: Do I need a Skip()?
+    # Don't accept events on disabled buttons (needed because of keybinds)
+    # Start here
     self.log_panel.add_entry("Debug: " + str(number))
     logs = self.game_state.apply_choice(number)
     for log in logs:
       self.log_panel.add_entry(log)
     self.status_bar.SetStatusText(self.game_state.current_state(), 0)
-    # TODO: unify names here
+    # TODO: unify names here. Also break out to general "Update" function?
     self.char_panel.update_character(self.game_state)
     self.set_labels(self.game_state.get_choices())
     self.encounter_panel.update(self.game_state)
+    self.status_bar.SetStatusText("Energy: %d" % self.game_state.energy, 1)
+    self.status_bar.SetStatusText("GP: %d" % self.game_state.character.gold, 2)
+    self.status_bar.SetStatusText("Time: %d" % self.game_state.time_spent, 3)
 
   def on_exit(self, evt):  # pylint: disable=unused-argument
     self.Close(True)

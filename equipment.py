@@ -4,7 +4,7 @@ import collections
 # TODO: Should probably move these to a different place
 STATS = ["Strength", "Stamina", "Speed", "Intellect"]
 DEFENSES = ["Defense", "Magic Defense"]
-SLOTS = ["Helm", "Chest", "Legs", "Accessory"]
+SLOTS = ["Weapon", "Helm", "Chest", "Legs", "Accessory"]
 RARITY = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
 ABBREVIATIONS = {"Defense": "Def",
                  "Magic Defense": "MDef"}
@@ -17,7 +17,7 @@ class Equipment(object):
     self.attributes = attributes
     # Uncommon / Rare / Epic / Legendary
     self.rarity = rarity
-    # 0-3, Helm, Chest, Legs, Accessory
+    # 0-4, Weapon, Helm, Chest, Legs, Accessory
     self.slot = slot
 
   def get_stat_value(self, stat):

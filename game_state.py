@@ -1,5 +1,10 @@
 """Represents the current state of the game. Main game logic module."""
+import random
 from character import Character
+
+TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
+                  "Temple", "Inn"]
+TOWER_LEVELS = 100
 
 class GameState(object):
   """
@@ -14,8 +19,27 @@ class GameState(object):
     self.state = ["CHAR_CREATE"]
     self.character = Character()
     self.floor = 1
-    self.tower = []
-    # FIXME: Generate tower
+    self.time_spent = 0
+    self.energy = 200
+    self.towns = self.generate_towns()
+    # When you complete a quest on a level, you gain some faction for that level
+    # and some for surrounding levels, decreasing cost of things?
+    self.tower_faction = [0] * 100
+    # TODO. This is to prevent quest scumming.
+    self.current_quest = [None] * 100
+    # TODO: Same with shop contents? Should it reset at some point?
+
+  @staticmethod
+  def generate_towns():
+    # Level 0 does not exist
+    tower = [None]
+    for _ in range(TOWER_LEVELS):
+    # START HERE
+      shop_set = set()
+      while len(shop_set) < 3:
+        shop_set.add(random.choice(TOWN_BUILDINGS))
+      tower.append(("Leave Town",) + tuple(shop_set))
+    return tower
 
   def current_state(self):
     """Return the current state."""
@@ -23,21 +47,80 @@ class GameState(object):
 
   def get_choices(self):
     """Return choices for next actions for the UI."""
-    if self.current_state() == "CHAR_CREATE":
+    current_state = self.current_state()
+    if current_state == "CHAR_CREATE":
       return ["Strength", "Stamina", "Speed", "Intellect"]
-    elif self.current_state() == "TOWN":
-      return ["Climb Tower", "Armor Shop", "Training", "Item Shop"]
+    elif current_state == "TOWN":
+      return self.towns[self.floor]
+    elif current_state == "ARMORER":
+      # TODO
+      return ["Armor 1", "Armor 2", "Armor 3", "Leave Shop"]
+    elif current_state == "ENCHANTER":
+      return ["Enchant Weapon", "Enchant Armor", "Enchant Accessory",
+              "Leave Shop"]
+    elif current_state == "ALCHEMIST":
+      # TODO
+      return ["Item 1", "Item 2", "Item 3", "Leave Shop"]
+    elif current_state == "TRAINING":
+      return ["Gain XP", "Train Skill", "Train Passives", "Leave Shop"]
+    elif current_state == "FORGE":
+      return ["", "Reforge Weapon", "Reforge Armor", "Leave Shop"]
+    elif current_state == "TEMPLE":
+      return ["", "Blessing", "Purify Rune", "Leave Temple"]
+    elif current_state == "INN":
+      return ["", "Rest", "Buy Food", "Leave Inn"]
+    # START HERE: Add menu options for town building states
+    #             Fix buttons so they are disabled if the option isn't there
+    #             Remember "back to town" options.
     else:
       return ["Error", "Error", "Error", "Error"]
 
   def apply_choice(self, choice):
     """Apply the given action choice to this gamestate, modifying it."""
     logs = []
-    if self.current_state() == "CHAR_CREATE":
-      self.character.make_initial_equipment(self.get_choices()[choice])
-      logs.append("Generated %s equipment." % self.get_choices()[choice])
+    current_state = self.current_state()
+    choice_text = self.get_choices()[choice]
+    if current_state == "CHAR_CREATE":
+      self.character.make_initial_equipment(choice_text)
+      logs.append("Generated %s equipment." % choice_text)
       self.state.pop()
       self.state.append("TOWN")
+    elif current_state == "TOWN":
+      if choice_text == "Leave Town":
+        # TODO: Implement
+        logs.append("Not implemented yet")
+      else:
+        logs.append("Went to the %s" % choice_text)
+        next_state = choice_text.upper()
+        self.state.append(next_state)
+    elif current_state == "ARMORER":
+      # TODO: Implement
+      logs.append("Not implemented yet")
+      self.state.pop()
+    elif current_state == "ENCHANTER":
+      # TODO: Implement
+      logs.append("Not implemented yet")
+      self.state.pop()
+    elif current_state == "ALCHEMIST":
+      # TODO: Implement
+      logs.append("Not implemented yet")
+      self.state.pop()
+    elif current_state == "TRAINING":
+      # TODO: Implement
+      logs.append("Not implemented yet")
+      self.state.pop()
+    elif current_state == "FORGE":
+      # TODO: Implement
+      logs.append("Not implemented yet")
+      self.state.pop()
+    elif current_state == "TEMPLE":
+      # TODO: Implement
+      logs.append("Not implemented yet")
+      self.state.pop()
+    elif current_state == "INN":
+      # TODO: Implement
+      logs.append("Not implemented yet")
+      self.state.pop()
     else:
       assert False
     return logs
@@ -46,9 +129,10 @@ class GameState(object):
   #       for example
   def panel_text(self):
     """Return text to display to the player about the current game state."""
+    # TODO: Add explanations for menu choices, as well.
     if self.current_state() == "CHAR_CREATE":
       return "Please choose the starting specialization for your character"
     elif self.current_state() == "TOWN":
       return "Town on tower level %d" % self.floor
     else:
-      return "Error, unhandled state %s" % self.current_state()
+      return "Error, no text for state %s" % self.current_state()
