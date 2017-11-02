@@ -146,9 +146,7 @@ class MainWindow(wx.Frame):
     if not self.button_panel.buttons[number].IsEnabled():
       self.log_panel.add_entry("Debug: " + str(number) + " not enabled")
       return   # TODO: Do I need a Skip()?
-    # Don't accept events on disabled buttons (needed because of keybinds)
-    # Start here
-    self.log_panel.add_entry("Debug: " + str(number))
+    #self.log_panel.add_entry("Debug: " + str(number))
     logs = self.game_state.apply_choice(number)
     for log in logs:
       self.log_panel.add_entry(log)

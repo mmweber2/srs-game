@@ -6,6 +6,9 @@ TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
                   "Temple", "Inn"]
 TOWER_LEVELS = 100
 
+# START HERE: Implement leaving town (climb tower, descend tower, do quest, town?)
+#             Start implementing actual combat
+
 class GameState(object):
   """
     GameState represents all the state for the current game, and functions for
@@ -19,6 +22,7 @@ class GameState(object):
     self.state = ["CHAR_CREATE"]
     self.character = Character()
     self.floor = 1
+    self.frontier = 1
     self.time_spent = 0
     self.energy = 200
     self.towns = self.generate_towns()
@@ -34,7 +38,6 @@ class GameState(object):
     # Level 0 does not exist
     tower = [None]
     for _ in range(TOWER_LEVELS):
-    # START HERE
       shop_set = set()
       while len(shop_set) < 3:
         shop_set.add(random.choice(TOWN_BUILDINGS))
@@ -69,9 +72,8 @@ class GameState(object):
       return ["", "Blessing", "Purify Rune", "Leave Temple"]
     elif current_state == "INN":
       return ["", "Rest", "Buy Food", "Leave Inn"]
-    # START HERE: Add menu options for town building states
-    #             Fix buttons so they are disabled if the option isn't there
-    #             Remember "back to town" options.
+    elif current_state == "OUTSIDE":
+      return ["Ascend Tower", "Quest", "Town", "Descend Tower"]
     else:
       return ["Error", "Error", "Error", "Error"]
 
@@ -87,12 +89,29 @@ class GameState(object):
       self.state.append("TOWN")
     elif current_state == "TOWN":
       if choice_text == "Leave Town":
-        # TODO: Implement
-        logs.append("Not implemented yet")
+        self.state.pop()
+        self.state.append("OUTSIDE")
+        logs.append("Left town")
       else:
         logs.append("Went to the %s" % choice_text)
         next_state = choice_text.upper()
         self.state.append(next_state)
+    elif current_state == "OUTSIDE":
+      #return ["Ascend Tower", "Quest", "Town", "Descend Tower"]
+      if choice_text == "Ascend Tower":
+        logs.append("Not implemented yet")
+      elif choice_text == "Quest":
+        logs.append("Not implemented yet")
+      elif choice_text == "Town":
+        self.state.pop()
+        self.state.append("TOWN")
+        logs.append("Went to town")
+      elif choice_text == "Descend Tower":
+        if self.floor > 1:
+          self.floor -= 1
+          logs.append("Descended to floor %d" % self.floor)
+        else:
+          logs.append("Cannot descend while on floor 1.")
     elif current_state == "ARMORER":
       # TODO: Implement
       logs.append("Not implemented yet")
@@ -130,9 +149,12 @@ class GameState(object):
   def panel_text(self):
     """Return text to display to the player about the current game state."""
     # TODO: Add explanations for menu choices, as well.
-    if self.current_state() == "CHAR_CREATE":
+    current_state = self.current_state()
+    if current_state == "CHAR_CREATE":
       return "Please choose the starting specialization for your character"
-    elif self.current_state() == "TOWN":
+    elif current_state == "TOWN":
       return "Town on tower level %d" % self.floor
+    elif current_state == "OUTSIDE":
+      return "Outside town on tower level %d" % self.floor
     else:
-      return "Error, no text for state %s" % self.current_state()
+      return "Error, no text for state %s" % current_state
