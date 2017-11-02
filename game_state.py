@@ -6,9 +6,6 @@ TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
                   "Temple", "Inn"]
 TOWER_LEVELS = 100
 
-# START HERE: Implement leaving town (climb tower, descend tower, do quest, town?)
-#             Start implementing actual combat
-
 class GameState(object):
   """
     GameState represents all the state for the current game, and functions for
@@ -32,6 +29,9 @@ class GameState(object):
     # TODO. This is to prevent quest scumming.
     self.current_quest = [None] * 100
     # TODO: Same with shop contents? Should it reset at some point?
+    # Number of encounters remaining in current tower ascension
+    # Could be battles or other things (finding treasure, finding a shop)
+    self.ascension_encounters = 0
 
   @staticmethod
   def generate_towns():
@@ -74,8 +74,24 @@ class GameState(object):
       return ["", "Rest", "Buy Food", "Leave Inn"]
     elif current_state == "OUTSIDE":
       return ["Ascend Tower", "Quest", "Town", "Descend Tower"]
+    elif current_state == "TOWER":
+      return ["Explore", "Rest", "Item", "Leave Tower"]
     else:
       return ["Error", "Error", "Error", "Error"]
+
+  ###
+  # Helper methods for changing state
+  ###
+
+  def change_state(self, state):
+    self.state.pop()
+    self.state.append(state)
+
+  def add_state(self, state):
+    self.state.append(state)
+
+  def leave_state(self):
+    self.state.pop()
 
   ###
   # Methods for applying choices in various states
@@ -84,27 +100,40 @@ class GameState(object):
   def apply_choice_char_create(self, logs, choice_text):
     self.character.make_initial_equipment(choice_text)
     logs.append("Generated %s equipment." % choice_text)
-    self.state.pop()
-    self.state.append("TOWN")
+    self.change_state("TOWN")
+
+  def apply_choice_tower(self, logs, choice_text):
+    if choice_text == "Explore":
+      logs.append("Not implemented yet")
+    elif choice_text == "Rest":
+      logs.append("Not implemented yet")
+    elif choice_text == "Item":
+      logs.append("Not implemented yet")
+    elif choice_text == "Leave Tower":
+      self.change_state("OUTSIDE")
 
   def apply_choice_town(self, logs, choice_text):
     if choice_text == "Leave Town":
-      self.state.pop()
-      self.state.append("OUTSIDE")
+      self.change_state("OUTSIDE")
       logs.append("Left town")
     else:
       logs.append("Went to the %s" % choice_text)
       next_state = choice_text.upper()
-      self.state.append(next_state)
+      self.add_state(next_state)
 
   def apply_choice_outside(self, logs, choice_text):
     if choice_text == "Ascend Tower":
-      logs.append("Not implemented yet")
+      if self.frontier <= self.floor:
+        self.change_state("TOWER")
+        self.ascension_encounters = random.randint(5, 10)
+        logs.append("Entered tower")
+      else:
+        self.floor += 1
+        logs.append("Ascended to floor %d" % self.floor)
     elif choice_text == "Quest":
       logs.append("Not implemented yet")
     elif choice_text == "Town":
-      self.state.pop()
-      self.state.append("TOWN")
+      self.change_state("TOWN")
       logs.append("Went to town")
     elif choice_text == "Descend Tower":
       if self.floor > 1:
@@ -127,7 +156,9 @@ class GameState(object):
       method(self, logs, choice_text)
     except AttributeError:
       logs.append("apply_choice not implemented yet, state: %s" % current_state)
-      self.state.pop()
+      # Hack. TODO: remove
+      if len(self.state) > 1:
+        self.leave_state()
     return logs
 
   # TODO: This and get_choices should probably be done differently (with a dict
@@ -142,5 +173,7 @@ class GameState(object):
       return "Town on tower level %d" % self.floor
     elif current_state == "OUTSIDE":
       return "Outside town on tower level %d" % self.floor
+    elif current_state == "TOWER":
+      return "Inside the tower ascending to level %d" % (self.floor + 1)
     else:
       return "Error, no text for state %s" % current_state
