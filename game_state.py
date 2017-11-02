@@ -2,6 +2,7 @@
 import random
 from character import Character
 from monster import Monster
+from combat import Combat
 
 TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
                   "Temple", "Inn"]
@@ -79,6 +80,8 @@ class GameState(object):
       return ["Ascend Tower", "Quest", "Town", "Descend Tower"]
     elif current_state == "TOWER":
       return ["Explore", "Rest", "Item", "Leave Tower"]
+    elif current_state == "COMBAT":
+      return ["Attack", "Skill", "Item", "Escape"]
     else:
       return ["Error", "Error", "Error", "Error"]
 
@@ -129,6 +132,25 @@ class GameState(object):
       logs.append("Not implemented yet")
     elif choice_text == "Leave Tower":
       self.change_state("OUTSIDE")
+
+  def apply_choice_combat(self, logs, choice_text):
+    # return ["Attack", "Skill", "Item", "Escape"]
+    if choice_text == "Attack":
+      result = Combat.perform_turn("Attack", None, self.character, self.monster,
+                                   logs)
+      # START HERE: implement winning and losing
+      if result == Combat.CHARACTER_DEAD:
+        logs.append("Death Not implemented yet")
+      elif result == Combat.MONSTER_DEAD:
+        logs.append("Winning not implemented yet")
+    elif choice_text == "Skill":
+      logs.append("Not implemented yet")
+    elif choice_text == "Item":
+      logs.append("Not implemented yet")
+    elif choice_text == "Escape":
+      logs.append("Not implemented yet")
+
+
 
   def apply_choice_town(self, logs, choice_text):
     if choice_text == "Leave Town":

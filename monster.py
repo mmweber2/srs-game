@@ -6,6 +6,8 @@ class Monster(object):
   def __init__(self, level, boss):
     # TODO: Should level vary somewhat?
     self.stats = {}
+    self.level = level
+    self.boss = boss
     # If you modify these, make sure to modify the XP calc
     # START HERE: Make a common table both rely on, idiot
     for stat in ("Strength", "Defense", "Speed", "Intellect", "Magic Defense"):
@@ -20,6 +22,7 @@ class Monster(object):
       # 50-150% change
       self.stats[stat] *= random.random() + 0.5
       self.stats[stat] = int(self.stats[stat])
+      self.stats[stat] = max(1, self.stats[stat])
     self.max_hp = self.stats["Stamina"] * 5
     self.current_hp = self.max_hp
     # TODO: Name generation
@@ -66,6 +69,11 @@ class Monster(object):
   def roll_stat(cls, level, die, modifier):
     # TODO: May be too slow, might want to use a different method
     return sum(random.randint(1, die) + modifier for _ in xrange(level))
+
+  def get_action(self, character):
+    # Monster AI
+    # TODO: Something more sophisticated, especially for special monsters
+    return ("Attack", None)
 
 if __name__ == "__main__":
   test_monster = Monster(1, False)
