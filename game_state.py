@@ -77,71 +77,57 @@ class GameState(object):
     else:
       return ["Error", "Error", "Error", "Error"]
 
+  ###
+  # Methods for applying choices in various states
+  ###
+
+  def apply_choice_char_create(self, logs, choice_text):
+    self.character.make_initial_equipment(choice_text)
+    logs.append("Generated %s equipment." % choice_text)
+    self.state.pop()
+    self.state.append("TOWN")
+
+  def apply_choice_town(self, logs, choice_text):
+    if choice_text == "Leave Town":
+      self.state.pop()
+      self.state.append("OUTSIDE")
+      logs.append("Left town")
+    else:
+      logs.append("Went to the %s" % choice_text)
+      next_state = choice_text.upper()
+      self.state.append(next_state)
+
+  def apply_choice_outside(self, logs, choice_text):
+    if choice_text == "Ascend Tower":
+      logs.append("Not implemented yet")
+    elif choice_text == "Quest":
+      logs.append("Not implemented yet")
+    elif choice_text == "Town":
+      self.state.pop()
+      self.state.append("TOWN")
+      logs.append("Went to town")
+    elif choice_text == "Descend Tower":
+      if self.floor > 1:
+        self.floor -= 1
+        logs.append("Descended to floor %d" % self.floor)
+      else:
+        logs.append("Cannot descend while on floor 1.")
+
+  # TODO: Implement: ARMORER, ENCHANTER, ALCHEMIST, TRAINING,
+  #                  FORGE, TEMPLE, INN
+
   def apply_choice(self, choice):
     """Apply the given action choice to this gamestate, modifying it."""
     logs = []
     current_state = self.current_state()
     choice_text = self.get_choices()[choice]
-    if current_state == "CHAR_CREATE":
-      self.character.make_initial_equipment(choice_text)
-      logs.append("Generated %s equipment." % choice_text)
+    method_name = "apply_choice_" + current_state.lower()
+    try:
+      method = getattr(GameState, method_name)
+      method(self, logs, choice_text)
+    except AttributeError:
+      logs.append("apply_choice not implemented yet, state: %s" % current_state)
       self.state.pop()
-      self.state.append("TOWN")
-    elif current_state == "TOWN":
-      if choice_text == "Leave Town":
-        self.state.pop()
-        self.state.append("OUTSIDE")
-        logs.append("Left town")
-      else:
-        logs.append("Went to the %s" % choice_text)
-        next_state = choice_text.upper()
-        self.state.append(next_state)
-    elif current_state == "OUTSIDE":
-      #return ["Ascend Tower", "Quest", "Town", "Descend Tower"]
-      if choice_text == "Ascend Tower":
-        logs.append("Not implemented yet")
-      elif choice_text == "Quest":
-        logs.append("Not implemented yet")
-      elif choice_text == "Town":
-        self.state.pop()
-        self.state.append("TOWN")
-        logs.append("Went to town")
-      elif choice_text == "Descend Tower":
-        if self.floor > 1:
-          self.floor -= 1
-          logs.append("Descended to floor %d" % self.floor)
-        else:
-          logs.append("Cannot descend while on floor 1.")
-    elif current_state == "ARMORER":
-      # TODO: Implement
-      logs.append("Not implemented yet")
-      self.state.pop()
-    elif current_state == "ENCHANTER":
-      # TODO: Implement
-      logs.append("Not implemented yet")
-      self.state.pop()
-    elif current_state == "ALCHEMIST":
-      # TODO: Implement
-      logs.append("Not implemented yet")
-      self.state.pop()
-    elif current_state == "TRAINING":
-      # TODO: Implement
-      logs.append("Not implemented yet")
-      self.state.pop()
-    elif current_state == "FORGE":
-      # TODO: Implement
-      logs.append("Not implemented yet")
-      self.state.pop()
-    elif current_state == "TEMPLE":
-      # TODO: Implement
-      logs.append("Not implemented yet")
-      self.state.pop()
-    elif current_state == "INN":
-      # TODO: Implement
-      logs.append("Not implemented yet")
-      self.state.pop()
-    else:
-      assert False
     return logs
 
   # TODO: This and get_choices should probably be done differently (with a dict
