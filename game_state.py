@@ -1,6 +1,7 @@
 """Represents the current state of the game. Main game logic module."""
 import random
 from character import Character
+from monster import Monster
 
 TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
                   "Temple", "Inn"]
@@ -32,6 +33,8 @@ class GameState(object):
     # Number of encounters remaining in current tower ascension
     # Could be battles or other things (finding treasure, finding a shop)
     self.ascension_encounters = 0
+    # Monster currently in combat with
+    self.monster = None
 
   @staticmethod
   def generate_towns():
@@ -102,9 +105,24 @@ class GameState(object):
     logs.append("Generated %s equipment." % choice_text)
     self.change_state("TOWN")
 
+  def start_combat(self, logs, boss):
+    self.add_state("COMBAT")
+    self.monster = Monster(self.floor, boss)
+    logs.append("You have encountered a monster")
+
   def apply_choice_tower(self, logs, choice_text):
     if choice_text == "Explore":
-      logs.append("Not implemented yet")
+      logs.append("You explore the tower...")
+      # TODO: Add non-combat options in here
+      if self.ascension_encounters > 0:
+        self.ascension_encounters -= 1
+        self.start_combat(logs, False)
+      else:
+        # TODO: Add boss every tenth floor
+        self.floor += 1
+        self.frontier = max(self.frontier, self.floor)
+        self.change_state("OUTSIDE")
+        logs.append("Congratulations, you have reached floor %d" % self.floor)
     elif choice_text == "Rest":
       logs.append("Not implemented yet")
     elif choice_text == "Item":
@@ -154,7 +172,8 @@ class GameState(object):
     try:
       method = getattr(GameState, method_name)
       method(self, logs, choice_text)
-    except AttributeError:
+    except AttributeError as exc:
+      print exc
       logs.append("apply_choice not implemented yet, state: %s" % current_state)
       # Hack. TODO: remove
       if len(self.state) > 1:
@@ -175,5 +194,7 @@ class GameState(object):
       return "Outside town on tower level %d" % self.floor
     elif current_state == "TOWER":
       return "Inside the tower ascending to level %d" % (self.floor + 1)
+    elif current_state == "COMBAT":
+      return str(self.monster)
     else:
       return "Error, no text for state %s" % current_state
