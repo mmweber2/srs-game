@@ -18,7 +18,7 @@ class Combat(object):
     while next_turn == cls.MONSTER_TURN:
       action, info = monster.get_action(character)
       result = cls.perform_action(action, info, monster, character, logs)
-      if result == cls.TARGET_DEAD: 
+      if result == cls.TARGET_DEAD:
         return cls.CHARACTER_DEAD
       next_turn = cls.get_next_actor(character, monster)
     return cls.CHARACTER_TURN
@@ -52,9 +52,11 @@ class Combat(object):
 
   @classmethod
   def get_next_actor(cls, character, monster):
-    character_chance = float(character.stats["Speed"]) / monster.stats["Speed"]
-    print character_chance
-    if random.randint() < character_chance:
+    char_speed = character.stats["Speed"]
+    monster_speed = monster.stats["Speed"]
+    total_speed = char_speed + monster_speed
+    character_chance = float(char_speed) / total_speed
+    if random.random() < character_chance:
       return cls.CHARACTER_TURN
     else:
       return cls.MONSTER_TURN

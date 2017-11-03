@@ -8,6 +8,11 @@ TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
                   "Temple", "Inn"]
 TOWER_LEVELS = 100
 
+# TODO: Add time costs to everything.
+#       When we do this, have a function that applies time so we can also
+#       check for day change stuff, like quests changing or shop inventory
+#       changing
+
 class GameState(object):
   """
     GameState represents all the state for the current game, and functions for
@@ -36,6 +41,9 @@ class GameState(object):
     self.ascension_encounters = 0
     # Monster currently in combat with
     self.monster = None
+    # When we defeat a monster, treasure goes here so we can handle it a piece
+    # at a time
+    self.treasure_queue = []
 
   @staticmethod
   def generate_towns():
@@ -85,19 +93,37 @@ class GameState(object):
     else:
       return ["Error", "Error", "Error", "Error"]
 
+  def handle_treasure(self, logs):
+    while self.treasure_queue:
+      item = self.treasure_queue.pop()
+      if type(item) is int:
+        logs.append("You got %d gold." % item)
+        self.character.gold += item
+      else: # START HERE: Implement equipping this stuff
+        logs.append("You got the following equipment")
+        logs.append(str(item))
+        logs.append("But equipping it isn't implemented yet")
+
   ###
   # Helper methods for changing state
   ###
 
+  def state_change_checks(self):
+    if self.current_state() == "TOWN":
+      self.character.restore_hp()
+
   def change_state(self, state):
     self.state.pop()
     self.state.append(state)
+    self.state_change_checks()
 
   def add_state(self, state):
     self.state.append(state)
+    self.state_change_checks()
 
   def leave_state(self):
     self.state.pop()
+    self.state_change_checks()
 
   ###
   # Methods for applying choices in various states
@@ -138,19 +164,25 @@ class GameState(object):
     if choice_text == "Attack":
       result = Combat.perform_turn("Attack", None, self.character, self.monster,
                                    logs)
-      # START HERE: implement winning and losing
       if result == Combat.CHARACTER_DEAD:
-        logs.append("Death Not implemented yet")
+        self.character.apply_death(logs)
+        self.leave_state()
+        self.change_state("TOWN")
+        self.monster = None
       elif result == Combat.MONSTER_DEAD:
-        logs.append("Winning not implemented yet")
+        logs.append("You have defeated %s" % self.monster.name)
+        self.character.gain_exp(self.monster.calculate_exp(),
+                                self.monster.level, logs)
+        self.treasure_queue = self.monster.get_treasure()
+        self.monster = None
+        self.leave_state()
+        self.handle_treasure(logs)
     elif choice_text == "Skill":
       logs.append("Not implemented yet")
     elif choice_text == "Item":
       logs.append("Not implemented yet")
     elif choice_text == "Escape":
       logs.append("Not implemented yet")
-
-
 
   def apply_choice_town(self, logs, choice_text):
     if choice_text == "Leave Town":

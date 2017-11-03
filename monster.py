@@ -1,6 +1,9 @@
 import random
+from equipment import Equipment
 
 # TODO: Should Monster and Character subclass from something?
+NORMAL_CHANCES = [0.0, 0.2, 0.04, 0.008, 0.00016]
+BOSS_CHANCES = [0.0, 0.4, 0.16, 0.064, 0.0256]
 
 class Monster(object):
   def __init__(self, level, boss):
@@ -9,7 +12,7 @@ class Monster(object):
     self.level = level
     self.boss = boss
     # If you modify these, make sure to modify the XP calc
-    # START HERE: Make a common table both rely on, idiot
+    # TODO: Make a common table both rely on, idiot
     for stat in ("Strength", "Defense", "Speed", "Intellect", "Magic Defense"):
       self.stats[stat] = self.roll_stat(level, 12, 2)
     for stat in ("Stamina",):
@@ -46,10 +49,10 @@ class Monster(object):
       pieces.append("***DEBUG***\n")
       pieces.append("stats: %r\n" % self.stats)
       pieces.append("HP: %d / %d\n" % (self.current_hp, self.max_hp))
-      pieces.append("XP value: %d\n" % self.calculate_xp())
+      pieces.append("XP value: %d\n" % self.calculate_exp())
     return "".join(pieces)
 
-  def calculate_xp(self):
+  def calculate_exp(self):
     effective_level = 0
     for stat in ("Strength", "Defense", "Speed", "Intellect", "Magic Defense"):
       effective_level += (self.stats[stat] / 8.5)
@@ -59,7 +62,20 @@ class Monster(object):
     return int(10 * effective_level)
 
   def get_treasure(self):
-    pass
+    # list of treasure from this monster.
+    # May be int (for gold), Equipment objects
+    # TODO: Item objects, runes, ...?
+    treasure = []
+    boss_factor = 4 if self.boss else 1
+    min_gold = 5 * self.level * boss_factor
+    max_gold = 15 * self.level * boss_factor
+    treasure.append(random.randint(min_gold, max_gold))
+    assert len(NORMAL_CHANCES) == len(BOSS_CHANCES)
+    chances = BOSS_CHANCES if self.boss else NORMAL_CHANCES 
+    for rarity in range(1, len(chances)):
+      while random.random() < chances[rarity]:
+        treasure.append(Equipment.get_new_armor(self.level, rarity=rarity))
+    return treasure
 
   def get_effective_stat(self, stat):
     # TODO: Buffs and such, probably

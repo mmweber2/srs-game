@@ -15,7 +15,7 @@ class Equipment(object):
     self.item_level = item_level
     # dictionary from attribute -> value
     self.attributes = attributes
-    # Uncommon / Rare / Epic / Legendary
+    # Common / Uncommon / Rare / Epic / Legendary
     self.rarity = rarity
     # 0-4, Weapon, Helm, Chest, Legs, Accessory
     self.slot = slot
@@ -25,13 +25,15 @@ class Equipment(object):
 
   @classmethod
   def make_stat_value(cls, item_level, rarity):
-    return random.randint(max(1, item_level / 2), item_level)
+    min_stat = max(1, item_level / 2)
+    max_stat = min_stat + item_level + rarity
+    return random.randint(min_stat, max_stat)
 
   @classmethod
   def get_new_armor(cls, item_level, slot=None, require=None, rarity=1):
     attributes = collections.defaultdict(int)
     if slot is None:
-      slot = random.randint(0, 3)
+      slot = random.randint(0, len(SLOTS) - 1)
     slots = 1 + rarity
     if require:
       attributes[require] = cls.make_stat_value(item_level, rarity)
