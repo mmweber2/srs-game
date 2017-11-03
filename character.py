@@ -4,6 +4,7 @@ import random
 class Character(object):
   def __init__(self):
     # Weapon, Helm, Chest, Legs, Accessory
+    # TODO: Implement wand vs. sword weapons
     self.equipment = [None, None, None, None, None]
     self.stats = {"Strength": 20, "Stamina": 20, "Defense": 20, "Speed": 20,
                   "Intellect": 20, "Magic Defense": 20}
@@ -16,12 +17,13 @@ class Character(object):
 
   def make_initial_equipment(self, choice):
     for i in range(len(self.equipment)):
-      self.equip(i, Equipment.get_new_armor(1, slot=i, require=choice))
+      self.equip(Equipment.get_new_armor(1, slot=i, require=choice))
 
   def __str__(self):
     pieces = []
     pieces.append("Character:\n")
     pieces.append("HP: %d / %d\n" % (self.current_hp, self.max_hp))
+    pieces.append("Level: %d\n" % self.level)
     pieces.append("XP: %d / %d\n" % (self.exp, self.next_level_exp()))
     for stat in self.stats:
       pieces.append("%s: %d (%d)\n" % (stat, self.get_effective_stat(stat),
@@ -40,7 +42,7 @@ class Character(object):
   def apply_death(self, logs):
     logs.append("You have been defeated.")
     logs.append("You were found by a passerby, and brought back to town.")
-    self.character.restore_hp()
+    self.restore_hp()
     lost_gold = self.gold / 2
     logs.append("You lost %d gold" % lost_gold)
     self.gold -= lost_gold
@@ -52,7 +54,8 @@ class Character(object):
         value += piece.get_stat_value(stat)
     return value
 
-  def equip(self, slot, item):
+  def equip(self, item):
+    slot = item.slot
     self.equipment[slot] = item
     # TODO: Separate function?
     new_max_hp = self.get_effective_stat("Stamina") * 5

@@ -3,6 +3,7 @@ import random
 from character import Character
 from monster import Monster
 from combat import Combat
+from equipment import Equipment
 
 TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
                   "Temple", "Inn"]
@@ -44,6 +45,7 @@ class GameState(object):
     # When we defeat a monster, treasure goes here so we can handle it a piece
     # at a time
     self.treasure_queue = []
+    self.equipment_choice = None
 
   @staticmethod
   def generate_towns():
@@ -90,6 +92,8 @@ class GameState(object):
       return ["Explore", "Rest", "Item", "Leave Tower"]
     elif current_state == "COMBAT":
       return ["Attack", "Skill", "Item", "Escape"]
+    elif current_state == "LOOT_EQUIPMENT":
+      return ["", "Keep Current", "Keep New", ""]
     else:
       return ["Error", "Error", "Error", "Error"]
 
@@ -99,10 +103,14 @@ class GameState(object):
       if type(item) is int:
         logs.append("You got %d gold." % item)
         self.character.gold += item
-      else: # START HERE: Implement equipping this stuff
+      elif type(item) is Equipment:
         logs.append("You got the following equipment")
         logs.append(str(item))
-        logs.append("But equipping it isn't implemented yet")
+        self.add_state("LOOT_EQUIPMENT")
+        self.equipment_choice = item
+        break  # Have to give choice to player
+      else:
+        assert False
 
   ###
   # Helper methods for changing state
@@ -214,6 +222,16 @@ class GameState(object):
       else:
         logs.append("Cannot descend while on floor 1.")
 
+  def apply_choice_loot_equipment(self, logs, choice_text):
+    if choice_text == "Keep Current":
+      # TODO: Implement whatever raw materials system
+      pass
+    elif choice_text == "Keep New":
+      self.character.equip(self.equipment_choice)
+      self.equipment_choice = None
+    self.leave_state()
+    self.handle_treasure(logs)
+
   # TODO: Implement: ARMORER, ENCHANTER, ALCHEMIST, TRAINING,
   #                  FORGE, TEMPLE, INN
 
@@ -234,6 +252,15 @@ class GameState(object):
         self.leave_state()
     return logs
 
+  def equipment_choice_text(self):
+    pieces = []
+    slot = self.equipment_choice.slot
+    pieces.append("Current Equipment:\n")
+    pieces.append(str(self.character.equipment[slot]))
+    pieces.append("\nNew Equipment:\n")
+    pieces.append(str(self.equipment_choice))
+    return "".join(pieces)
+
   # TODO: This and get_choices should probably be done differently (with a dict
   #       for example
   def panel_text(self):
@@ -250,5 +277,7 @@ class GameState(object):
       return "Inside the tower ascending to level %d" % (self.floor + 1)
     elif current_state == "COMBAT":
       return str(self.monster)
+    elif current_state == "LOOT_EQUIPMENT":
+      return self.equipment_choice_text()
     else:
       return "Error, no text for state %s" % current_state
