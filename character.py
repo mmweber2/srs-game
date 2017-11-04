@@ -80,13 +80,14 @@ class Character(object):
         self.stats[stat] += increase
         logs.append("You have gained %d %s" % (increase, stat))
 
-  def gain_exp(self, exp, encounter_level, logs):
+  def gain_exp(self, exp, encounter_level, logs, level_adjust=True):
     exp_gained = exp
     level_difference = encounter_level - self.level
-    exp_gained = int(exp_gained * (1.1 ** level_difference))
+    if level_adjust:
+      exp_gained = int(exp_gained * (1.1 ** level_difference))
     self.exp += exp_gained
     logs.append("You have gained %d XP" % exp_gained)
-    while self.exp > self.next_level_exp():
+    while self.exp >= self.next_level_exp():
       self.exp -= self.next_level_exp()
       self.level += 1
       logs.append("You have reached level %d!" % self.level)

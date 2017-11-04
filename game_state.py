@@ -4,15 +4,19 @@ from character import Character
 from monster import Monster
 from combat import Combat
 from equipment import Equipment
+from quest import Quest
 
 TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
-                  "Temple", "Inn"]
+                  "Temple", "Inn", "Weaponsmith"]
 TOWER_LEVELS = 100
 
 # TODO: Add time costs to everything.
 #       When we do this, have a function that applies time so we can also
 #       check for day change stuff, like quests changing or shop inventory
 #       changing
+
+# TODO: It is probably not best to be passing logs around to everything?
+#       it could be part of the GameState, or we could use a logger for real
 
 class GameState(object):
   """
@@ -33,19 +37,27 @@ class GameState(object):
     self.towns = self.generate_towns()
     # When you complete a quest on a level, you gain some faction for that level
     # and some for surrounding levels, decreasing cost of things?
-    self.tower_faction = [0] * 100
+    self.tower_faction = [0] * (TOWER_LEVELS + 1)
     # TODO. This is to prevent quest scumming.
-    self.current_quest = [None] * 100
+    self.tower_quests = self.generate_quests()
     # TODO: Same with shop contents? Should it reset at some point?
     # Number of encounters remaining in current tower ascension
     # Could be battles or other things (finding treasure, finding a shop)
     self.ascension_encounters = 0
     # Monster currently in combat with
     self.monster = None
+    self.quest = None
     # When we defeat a monster, treasure goes here so we can handle it a piece
     # at a time
     self.treasure_queue = []
     self.equipment_choice = None
+
+  @staticmethod
+  def generate_quests():
+    quests = [None]
+    for i in xrange(1, 101):
+      quests.append(Quest(i))
+    return quests
 
   @staticmethod
   def generate_towns():
@@ -62,6 +74,22 @@ class GameState(object):
     """Return the current state."""
     return self.state[-1]
 
+  def tower_update(self):
+    # TODO: Update quests, inventories, etc, since 6 hours has passed
+    pass
+
+  def pass_time(self, amount, logs):
+    old_period = self.time_spent / 360
+    self.time_spent += amount
+    new_period = self.time_spent / 360
+    if old_period != new_period:
+      self.tower_update()
+      # TODO: Better text?
+      logs.append("Tower has updated")
+
+  # TODO: Clean this up. While some of them require logic, a lot of them do not,
+  #       so we could move those to a dictionary, and leave only the ones that
+  #       require logic
   def get_choices(self):
     """Return choices for next actions for the UI."""
     current_state = self.current_state()
@@ -70,13 +98,13 @@ class GameState(object):
     elif current_state == "TOWN":
       return self.towns[self.floor]
     elif current_state == "ARMORER":
-      # TODO
       return ["Armor 1", "Armor 2", "Armor 3", "Leave Shop"]
+    elif current_state == "WEAPONSMITH":
+      return ["Weapon 1", "Weapon 2", "Weapon 3", "Leave Shop"]
     elif current_state == "ENCHANTER":
       return ["Enchant Weapon", "Enchant Armor", "Enchant Accessory",
               "Leave Shop"]
     elif current_state == "ALCHEMIST":
-      # TODO
       return ["Item 1", "Item 2", "Item 3", "Leave Shop"]
     elif current_state == "TRAINING":
       return ["Gain XP", "Train Skill", "Train Passives", "Leave Shop"]
@@ -87,13 +115,23 @@ class GameState(object):
     elif current_state == "INN":
       return ["", "Rest", "Buy Food", "Leave Inn"]
     elif current_state == "OUTSIDE":
-      return ["Ascend Tower", "Quest", "Town", "Descend Tower"]
+      if self.tower_quests[self.floor] is not None:
+        return ["Ascend Tower", "Quest", "Town", "Descend Tower"]
+      else:
+        return ["Ascend Tower", "", "Town", "Descend Tower"]
     elif current_state == "TOWER":
       return ["Explore", "Rest", "Item", "Leave Tower"]
     elif current_state == "COMBAT":
       return ["Attack", "Skill", "Item", "Escape"]
     elif current_state == "LOOT_EQUIPMENT":
       return ["", "Keep Current", "Keep New", ""]
+    elif current_state == "ACCEPT_QUEST":
+      return ["", "Accept Quest", "Decline Quest", ""]
+    elif current_state == "QUEST":
+      if self.quest.complete():
+        return ["Complete Quest", "", "", "Leave Quest"]
+      else:
+        return ["Continue Quest", "Rest", "Item", "Leave Quest"]
     else:
       return ["Error", "Error", "Error", "Error"]
 
@@ -147,8 +185,52 @@ class GameState(object):
     self.monster = Monster(self.floor, boss)
     logs.append("You have encountered a monster")
 
+  def apply_choice_accept_quest(self, logs, choice_text):
+    if choice_text == "Accept Quest":
+      self.change_state("QUEST")
+      logs.append("You accept the quest.")
+    elif choice_text == "Decline Quest":
+      self.quest = None
+      self.leave_state()
+      logs.append("You decline the quest.")
+
+  def apply_choice_quest(self, logs, choice_text):
+    if choice_text == "Continue Quest":
+      self.pass_time(random.randint(1, 3), logs)
+      logs.append("You continue the quest...")
+      self.add_state("COMBAT")
+      self.monster = self.quest.get_monster()
+      # TODO: Merge this with start_combat somehow
+      logs.append("You have encountered a monster")
+      #return ["Continue Quest", "Rest", "Item", "Leave Quest"]
+    elif choice_text == "Rest":
+      self.pass_time(5, logs)
+      logs.append("You rest")
+      hp_gained = self.character.rest()
+      logs.append("You regain %d HP" % hp_gained)
+    elif choice_text == "Item":
+      self.pass_time(1, logs)
+      logs.append("Not implemented yet")
+    elif choice_text == "Leave Quest":
+      self.pass_time(1, logs)
+      self.leave_state()
+    elif choice_text == "Complete Quest":
+      logs.append("You complete the quest.")
+      logs.append("You gain %d gold." % self.quest.gp_reward)
+      self.character.gold += self.quest.gp_reward
+      self.character.gain_exp(self.quest.xp_reward, self.floor, logs, 
+                              level_adjust=False)
+      self.treasure_queue = self.quest.get_treasure()
+      self.leave_state()
+      if self.current_state() == "OUTSIDE":
+        self.tower_quests[self.floor] = None
+      self.handle_treasure(logs)
+  # START HERE: Do more testing on quests, clean up code with pylint, and then
+  #             clear out a few relevant TODOs
+
   def apply_choice_tower(self, logs, choice_text):
     if choice_text == "Explore":
+      self.pass_time(random.randint(1, 10), logs)
       logs.append("You explore the tower...")
       # TODO: Add non-combat options in here
       if self.ascension_encounters > 0:
@@ -161,14 +243,17 @@ class GameState(object):
         self.change_state("OUTSIDE")
         logs.append("Congratulations, you have reached floor %d" % self.floor)
     elif choice_text == "Rest":
+      self.pass_time(5, logs)
       logs.append("You rest")
       hp_gained = self.character.rest()
       logs.append("You regain %d HP" % hp_gained)
       if random.random() < .2:
         self.start_combat(logs, False)
     elif choice_text == "Item":
+      self.pass_time(1, logs)
       logs.append("Not implemented yet")
     elif choice_text == "Leave Tower":
+      self.pass_time(10, logs)
       self.change_state("OUTSIDE")
 
   def apply_death(self, logs):
@@ -176,10 +261,12 @@ class GameState(object):
     self.leave_state()
     self.change_state("TOWN")
     self.monster = None
+    self.pass_time(random.randint(5, 5 * random.randint(self.floor)), logs)
 
   def apply_choice_combat(self, logs, choice_text):
     # return ["Attack", "Skill", "Item", "Escape"]
     if choice_text == "Attack":
+      self.pass_time(1, logs)
       result = Combat.perform_turn("Attack", None, self.character, self.monster,
                                    logs)
       if result == Combat.CHARACTER_DEAD:
@@ -191,12 +278,16 @@ class GameState(object):
         self.treasure_queue = self.monster.get_treasure()
         self.monster = None
         self.leave_state()
+        if self.current_state() == "QUEST":
+          self.quest.defeat_monster()
         self.handle_treasure(logs)
     elif choice_text == "Skill":
+      self.pass_time(1, logs)
       logs.append("Not implemented yet")
     elif choice_text == "Item":
       logs.append("Not implemented yet")
     elif choice_text == "Escape":
+      self.pass_time(1, logs)
       logs.append("You attempt to escape...")
       result = Combat.perform_turn("Escape", None, self.character, self.monster,
                                    logs)
@@ -210,15 +301,18 @@ class GameState(object):
 
   def apply_choice_town(self, logs, choice_text):
     if choice_text == "Leave Town":
+      self.pass_time(5, logs)
       self.change_state("OUTSIDE")
       logs.append("Left town")
     else:
+      self.pass_time(3, logs)
       logs.append("Went to the %s" % choice_text)
       next_state = choice_text.upper()
       self.add_state(next_state)
 
   def apply_choice_outside(self, logs, choice_text):
     if choice_text == "Ascend Tower":
+      self.pass_time(10, logs)
       if self.frontier <= self.floor:
         self.change_state("TOWER")
         self.ascension_encounters = random.randint(5, 10)
@@ -227,11 +321,16 @@ class GameState(object):
         self.floor += 1
         logs.append("Ascended to floor %d" % self.floor)
     elif choice_text == "Quest":
-      logs.append("Not implemented yet")
+      self.pass_time(5, logs)
+      self.add_state("ACCEPT_QUEST")
+      logs.append("You look for a quest giver...")
+      self.quest = self.tower_quests[self.floor]
     elif choice_text == "Town":
+      self.pass_time(5, logs)
       self.change_state("TOWN")
       logs.append("Went to town")
     elif choice_text == "Descend Tower":
+      self.pass_time(10, logs)
       if self.floor > 1:
         self.floor -= 1
         logs.append("Descended to floor %d" % self.floor)
@@ -295,5 +394,7 @@ class GameState(object):
       return str(self.monster)
     elif current_state == "LOOT_EQUIPMENT":
       return self.equipment_choice_text()
+    elif current_state == "ACCEPT_QUEST" or current_state == "QUEST":
+      return str(self.tower_quests[self.floor])
     else:
       return "Error, no text for state %s" % current_state

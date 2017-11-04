@@ -151,7 +151,9 @@ class MainWindow(wx.Frame):
     logs = self.game_state.apply_choice(number)
     for log in logs:
       self.log_panel.add_entry(log)
-    self.status_bar.SetStatusText(self.game_state.current_state(), 0)
+    #self.status_bar.SetStatusText(self.game_state.current_state(), 0)
+    # TODO: Revert to above
+    self.status_bar.SetStatusText(str(self.game_state.state), 0)
     # TODO: unify names here. Also break out to general "Update" function?
     self.char_panel.update_character(self.game_state)
     self.set_labels(self.game_state.get_choices())
