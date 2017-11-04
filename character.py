@@ -34,10 +34,16 @@ class Character(object):
     return "".join(pieces)
 
   def restore_hp(self, amount=None):
+    old_current = self.current_hp
     if amount is None:
       self.current_hp = self.max_hp
     else:
       self.current_hp = min(self.max_hp, self.current_hp + amount)
+    return self.current_hp - old_current
+
+  def rest(self):
+    hp_gained = self.max_hp/10
+    return self.restore_hp(hp_gained)
 
   def apply_death(self, logs):
     logs.append("You have been defeated.")

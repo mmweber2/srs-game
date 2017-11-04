@@ -7,19 +7,28 @@ class Combat(object):
   MONSTER_TURN = 3
   TARGET_DEAD = 4
   TARGET_ALIVE = 5
+  ACTOR_SUCCEEDED = 6
+  ACTOR_FAILED = 7
+  CHARACTER_ESCAPED = 8
+  MONSTER_ESCAPED = 9
+  ACTOR_ESCAPED = 10
 
   @classmethod
   def perform_turn(cls, action, info, character, monster, logs):
     # Character action
-    death = cls.perform_action(action, info, character, monster, logs)
-    if death == cls.TARGET_DEAD:
+    result = cls.perform_action(action, info, character, monster, logs)
+    if result == cls.TARGET_DEAD:
       return cls.MONSTER_DEAD
+    elif result == cls.ACTOR_ESCAPED:
+      return cls.CHARACTER_ESCAPED
     next_turn = cls.get_next_actor(character, monster)
     while next_turn == cls.MONSTER_TURN:
       action, info = monster.get_action(character)
       result = cls.perform_action(action, info, monster, character, logs)
       if result == cls.TARGET_DEAD:
         return cls.CHARACTER_DEAD
+      elif result == cls.ACTOR_ESCAPED:
+        return cls.MONSTER_ESCAPED
       next_turn = cls.get_next_actor(character, monster)
     return cls.CHARACTER_TURN
 
@@ -52,11 +61,28 @@ class Combat(object):
 
   @classmethod
   def get_next_actor(cls, character, monster):
-    char_speed = character.stats["Speed"]
-    monster_speed = monster.stats["Speed"]
-    total_speed = char_speed + monster_speed
-    character_chance = float(char_speed) / total_speed
-    if random.random() < character_chance:
+    result = cls.skill_check("Speed", character, monster)
+    if result == cls.ACTOR_SUCCEEDED:
       return cls.CHARACTER_TURN
     else:
       return cls.MONSTER_TURN
+
+  @classmethod
+  def skill_check(cls, stat, actor, target):
+    actor_stat = actor.stats[stat]
+    target_stat = target.stats[stat]
+    total_stat = actor_stat + target_stat
+    actor_chance = float(actor_stat) / total_stat
+    if random.random() < actor_chance:
+      return cls.ACTOR_SUCCEEDED
+    else:
+      return cls.ACTOR_FAILED
+
+  @classmethod
+  def action_escape(cls, _, actor, target, logs):
+    result = cls.skill_check("Speed", actor, target)
+    if result == cls.ACTOR_SUCCEEDED:
+      return cls.ACTOR_ESCAPED
+    else:
+      logs.append("Escape unsuccessful")
+      return cls.ACTOR_FAILED

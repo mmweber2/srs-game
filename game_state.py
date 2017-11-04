@@ -161,11 +161,21 @@ class GameState(object):
         self.change_state("OUTSIDE")
         logs.append("Congratulations, you have reached floor %d" % self.floor)
     elif choice_text == "Rest":
-      logs.append("Not implemented yet")
+      logs.append("You rest")
+      hp_gained = self.character.rest()
+      logs.append("You regain %d HP" % hp_gained)
+      if random.random() < .2:
+        self.start_combat(logs, False)
     elif choice_text == "Item":
       logs.append("Not implemented yet")
     elif choice_text == "Leave Tower":
       self.change_state("OUTSIDE")
+
+  def apply_death(self, logs):
+    self.character.apply_death(logs)
+    self.leave_state()
+    self.change_state("TOWN")
+    self.monster = None
 
   def apply_choice_combat(self, logs, choice_text):
     # return ["Attack", "Skill", "Item", "Escape"]
@@ -173,10 +183,7 @@ class GameState(object):
       result = Combat.perform_turn("Attack", None, self.character, self.monster,
                                    logs)
       if result == Combat.CHARACTER_DEAD:
-        self.character.apply_death(logs)
-        self.leave_state()
-        self.change_state("TOWN")
-        self.monster = None
+        self.apply_death(logs)
       elif result == Combat.MONSTER_DEAD:
         logs.append("You have defeated %s" % self.monster.name)
         self.character.gain_exp(self.monster.calculate_exp(),
@@ -190,7 +197,16 @@ class GameState(object):
     elif choice_text == "Item":
       logs.append("Not implemented yet")
     elif choice_text == "Escape":
-      logs.append("Not implemented yet")
+      logs.append("You attempt to escape...")
+      result = Combat.perform_turn("Escape", None, self.character, self.monster,
+                                   logs)
+      # TODO: Maybe monster can die in this case (eventually DoTs)
+      if result == Combat.CHARACTER_DEAD:
+        self.apply_death(logs)
+      elif result == Combat.CHARACTER_ESCAPED:
+        logs.append("You escaped successfully")
+        self.monster = None
+        self.leave_state()
 
   def apply_choice_town(self, logs, choice_text):
     if choice_text == "Leave Town":

@@ -72,7 +72,7 @@ class EncounterPanel(wx.Panel):
 class MainWindow(wx.Frame):
   # pylint: disable=too-many-instance-attributes
   def __init__(self, parent, title):
-    wx.Frame.__init__(self, parent, title=title)
+    wx.Frame.__init__(self, parent, title=title, size=(1000, 600))
     self.status_bar = self.CreateStatusBar(4)
     self.status_bar.SetStatusText("Welcome to SRS Game")
     self.status_bar.SetStatusText("Energy: 0", 1)
@@ -107,7 +107,8 @@ class MainWindow(wx.Frame):
     # Eventually, we'd have a right_sizer containing it
     self.top_sizer.Add(self.left_sizer, 1, wx.EXPAND)
     self.top_sizer.Add(self.right_sizer, 2, wx.EXPAND)
-    self.SetSizerAndFit(self.top_sizer)
+    #self.SetSizerAndFit(self.top_sizer)
+    self.SetSizer(self.top_sizer)
 
     # Events
     # Bind the four buttons to the button_press method
