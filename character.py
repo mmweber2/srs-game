@@ -1,5 +1,5 @@
-from equipment import Equipment
 import random
+from equipment import Equipment, RARITY
 
 class Character(object):
   def __init__(self):
@@ -14,6 +14,7 @@ class Character(object):
     self.current_hp = self.max_hp
     self.level = 1
     self.exp = 0
+    self.materials = [0] * len(RARITY)
 
   def make_initial_equipment(self, choice):
     for i in range(len(self.equipment)):
@@ -31,6 +32,15 @@ class Character(object):
     pieces.append("Equipment:\n")
     for piece in self.equipment:
       pieces.append(str(piece) + "\n")
+    pieces.append("Materials:\n")
+    if sum(self.materials) == 0:
+      pieces.append("None")
+    else:
+      # TODO: Use function in Equipment?
+      for i in xrange(len(self.materials)):
+        if self.materials[i] > 0:
+          pieces.append("%s: %d  " % (RARITY[i], self.materials[i]))
+    pieces.append("\n")
     return "".join(pieces)
 
   def restore_hp(self, amount=None):
@@ -62,12 +72,22 @@ class Character(object):
 
   def equip(self, item):
     slot = item.slot
+    removed = self.equipment[slot]
     self.equipment[slot] = item
     # TODO: Separate function?
     new_max_hp = self.get_effective_stat("Stamina") * 5
     difference = new_max_hp - self.max_hp
-    self.current_hp += difference
+    self.current_hp += max(0, difference)  # Don't lose HP for equipping
     self.max_hp = new_max_hp
+    self.current_hp = min(self.current_hp, self.max_hp)  # Unless max_hp drops
+    return removed
+
+  def get_damage(self):
+    # 0 is weapon
+    return self.equipment[0].get_damage()
+
+  def get_damage_type(self):
+    return self.equipment[0].get_damage_type()
 
   def next_level_exp(self):
     # TODO: Something more "complex", lol
@@ -75,10 +95,14 @@ class Character(object):
 
   def level_up(self, logs):
     for stat in self.stats:
-      increase = random.randint(0, 2)
+      increase = random.randint(1, 3)
       if increase > 0:
         self.stats[stat] += increase
         logs.append("You have gained %d %s" % (increase, stat))
+
+  def gain_materials(self, materials):
+    for i in xrange(len(materials)):
+      self.materials[i] += materials[i]
 
   def gain_exp(self, exp, encounter_level, logs, level_adjust=True):
     exp_gained = exp

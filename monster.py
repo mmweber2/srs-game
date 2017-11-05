@@ -14,16 +14,16 @@ class Monster(object):
     # If you modify these, make sure to modify the XP calc
     # TODO: Make a common table both rely on, idiot
     for stat in ("Strength", "Defense", "Speed", "Intellect", "Magic Defense"):
-      self.stats[stat] = self.roll_stat(level, 12, 2)
+      self.stats[stat] = self.roll_stat(level, 10, 1)
     for stat in ("Stamina",):
       self.stats[stat] = self.roll_stat(level, 8, 0)
     if boss:
       for stat in self.stats:
         self.stats[stat] = self.stats[stat] * 1.25
-      self.stats["Stamina"] *= 4   # Effectively x5
+      self.stats["Stamina"] *= 3   # Effectively x3.75
     for stat in self.stats:
-      # 50-150% change
-      self.stats[stat] *= random.random() + 0.5
+      # 75-125% change
+      self.stats[stat] *= (random.random() * 0.5) + 0.75
       self.stats[stat] = int(self.stats[stat])
       self.stats[stat] = max(1, self.stats[stat])
     self.max_hp = self.stats["Stamina"] * 5
@@ -55,7 +55,7 @@ class Monster(object):
   def calculate_exp(self):
     effective_level = 0
     for stat in ("Strength", "Defense", "Speed", "Intellect", "Magic Defense"):
-      effective_level += (self.stats[stat] / 8.5)
+      effective_level += (self.stats[stat] / 6.5)
     for stat in ("Stamina",):
       effective_level += (self.stats[stat] / 4.5)
     effective_level /= 6
@@ -71,7 +71,7 @@ class Monster(object):
     max_gold = 15 * self.level * boss_factor
     treasure.append(random.randint(min_gold, max_gold))
     assert len(NORMAL_CHANCES) == len(BOSS_CHANCES)
-    chances = BOSS_CHANCES if self.boss else NORMAL_CHANCES 
+    chances = BOSS_CHANCES if self.boss else NORMAL_CHANCES
     for rarity in range(1, len(chances)):
       while random.random() < chances[rarity]:
         treasure.append(Equipment.get_new_armor(self.level, rarity=rarity))
@@ -80,6 +80,17 @@ class Monster(object):
   def get_effective_stat(self, stat):
     # TODO: Buffs and such, probably
     return self.stats[stat]
+
+  def get_damage(self):
+    low = 10 + (5 * self.level)
+    high = 20 + (7 * self.level)
+    return random.randint(low, high)
+
+  def get_damage_type(self):
+    if self.stats["Intellect"] > self.stats["Strength"]:
+      return "Magic"
+    else:
+      return "Physical"
 
   @classmethod
   def roll_stat(cls, level, die, modifier):
@@ -90,7 +101,3 @@ class Monster(object):
     # Monster AI
     # TODO: Something more sophisticated, especially for special monsters
     return ("Attack", None)
-
-if __name__ == "__main__":
-  test_monster = Monster(1, False)
-  print test_monster

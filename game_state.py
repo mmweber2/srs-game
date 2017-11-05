@@ -9,6 +9,7 @@ from quest import Quest
 TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
                   "Temple", "Inn", "Weaponsmith"]
 TOWER_LEVELS = 100
+UPDATE_TIME = 360
 
 # TODO: Add time costs to everything.
 #       When we do this, have a function that applies time so we can also
@@ -76,12 +77,15 @@ class GameState(object):
 
   def tower_update(self):
     # TODO: Update quests, inventories, etc, since 6 hours has passed
-    pass
+    self.tower_quests = self.generate_quests()
+
+  def time_to_refresh(self):
+    return UPDATE_TIME - (self.time_spent % UPDATE_TIME)
 
   def pass_time(self, amount, logs):
-    old_period = self.time_spent / 360
+    old_period = self.time_spent / UPDATE_TIME
     self.time_spent += amount
-    new_period = self.time_spent / 360
+    new_period = self.time_spent / UPDATE_TIME
     if old_period != new_period:
       self.tower_update()
       # TODO: Better text?
@@ -138,10 +142,12 @@ class GameState(object):
   def handle_treasure(self, logs):
     while self.treasure_queue:
       item = self.treasure_queue.pop()
-      if type(item) is int:
+      if isinstance(item, int):
         logs.append("You got %d gold." % item)
         self.character.gold += item
-      elif type(item) is Equipment:
+      elif isinstance(item, Equipment):
+        # TODO: Auto-equip if strictly better
+        #       Auto-shard if strictly worse
         logs.append("You got the following equipment")
         logs.append(str(item))
         self.add_state("LOOT_EQUIPMENT")
@@ -218,7 +224,7 @@ class GameState(object):
       logs.append("You complete the quest.")
       logs.append("You gain %d gold." % self.quest.gp_reward)
       self.character.gold += self.quest.gp_reward
-      self.character.gain_exp(self.quest.xp_reward, self.floor, logs, 
+      self.character.gain_exp(self.quest.xp_reward, self.floor, logs,
                               level_adjust=False)
       self.treasure_queue = self.quest.get_treasure()
       self.leave_state()
@@ -258,10 +264,13 @@ class GameState(object):
 
   def apply_death(self, logs):
     self.character.apply_death(logs)
-    self.leave_state()
+    self.leave_state()  # COMBAT
+    if self.current_state() == "QUEST":
+      self.leave_state()
     self.change_state("TOWN")
     self.monster = None
-    self.pass_time(random.randint(5, 5 * random.randint(self.floor)), logs)
+    self.pass_time(random.randint(5, 5 * self.floor), logs)
+    # TODO: Give quest monsters back their HP
 
   def apply_choice_combat(self, logs, choice_text):
     # return ["Attack", "Skill", "Item", "Escape"]
@@ -339,11 +348,15 @@ class GameState(object):
 
   def apply_choice_loot_equipment(self, logs, choice_text):
     if choice_text == "Keep Current":
-      # TODO: Implement whatever raw materials system
-      pass
+      recycle = self.equipment_choice
     elif choice_text == "Keep New":
-      self.character.equip(self.equipment_choice)
+      recycle = self.character.equip(self.equipment_choice)
       self.equipment_choice = None
+    logs.append("Recycled %s" % recycle)
+    materials = recycle.get_recycled_materials()
+    self.character.gain_materials(materials)
+    logs.append("Received %s" % Equipment.materials_string(materials))
+    # Add materials to character, add materials inventory to character string
     self.leave_state()
     self.handle_treasure(logs)
 
@@ -374,6 +387,7 @@ class GameState(object):
     pieces.append(str(self.character.equipment[slot]))
     pieces.append("\nNew Equipment:\n")
     pieces.append(str(self.equipment_choice))
+    # TODO: Show difference between two pieces of equipment
     return "".join(pieces)
 
   # TODO: This and get_choices should probably be done differently (with a dict

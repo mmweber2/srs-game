@@ -53,10 +53,17 @@ class Combat(object):
   def action_attack(cls, _, actor, target, logs):
     """Attacks, applies damage, returns True if target dies."""
     logs.append("%s attacks %s" % (actor.name, target.name))
-    damage = random.randint(10, 20)
-    damage *= float(actor.stats["Strength"]) / target.stats["Defense"]
-    damage = int(damage)
-    logs.append("Hits for %d damage" % damage)
+    damage = actor.get_damage()
+    damage_type = actor.get_damage_type()
+    if damage_type == "Physical":
+      factor = float(actor.stats["Strength"]) / target.stats["Defense"]
+    elif damage_type == "Magic":
+      factor = float(actor.stats["Intellect"]) / target.stats["Magic Defense"]
+    else:
+      assert False
+    factor = factor ** .5
+    damage = int(damage * factor)
+    logs.append("Hits for %d %s damage" % (damage, damage_type))
     return cls.apply_damage(target, damage)
 
   @classmethod
@@ -72,6 +79,7 @@ class Combat(object):
     actor_stat = actor.stats[stat]
     target_stat = target.stats[stat]
     total_stat = actor_stat + target_stat
+    # TODO: Consider applying a dampening factor to this (like sqrt again?)
     actor_chance = float(actor_stat) / total_stat
     if random.random() < actor_chance:
       return cls.ACTOR_SUCCEEDED

@@ -160,7 +160,9 @@ class MainWindow(wx.Frame):
     self.encounter_panel.update(self.game_state)
     self.status_bar.SetStatusText("Energy: %d" % self.game_state.energy, 1)
     self.status_bar.SetStatusText("GP: %d" % self.game_state.character.gold, 2)
-    self.status_bar.SetStatusText("Time: %d" % self.game_state.time_spent, 3)
+    time_spent = self.game_state.time_spent
+    time_left = self.game_state.time_to_refresh()
+    self.status_bar.SetStatusText("Time: %d (%d)" % (time_spent, time_left), 3)
 
   def on_exit(self, evt):  # pylint: disable=unused-argument
     self.Close(True)

@@ -57,4 +57,3 @@ class Quest(object):
           treasure.append(Equipment.get_new_armor(self.level, rarity=rarity))
           break
     return treasure
-

@@ -8,6 +8,7 @@ SLOTS = ["Weapon", "Helm", "Chest", "Legs", "Accessory"]
 RARITY = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
 ABBREVIATIONS = {"Defense": "Def",
                  "Magic Defense": "MDef"}
+WEAPON_STATS = ["Low", "High", "Type"]
 
 class Equipment(object):
   def __init__(self, item_level, attributes, slot, rarity):
@@ -19,15 +20,48 @@ class Equipment(object):
     self.rarity = rarity
     # 0-4, Weapon, Helm, Chest, Legs, Accessory
     self.slot = slot
+    # TODO: Implement damage range for weapons
+    #       Figure out what is reasonable against growing monster stamina
+    #       2-3 hits against a normal monster is probably about right
 
   def get_stat_value(self, stat):
     return self.attributes[stat]
 
   @classmethod
   def make_stat_value(cls, item_level, rarity):
+    # TODO: Gaussian stuff?
     min_stat = max(1, item_level / 2)
     max_stat = min_stat + item_level + rarity
     return random.randint(min_stat, max_stat)
+
+  def get_damage(self):
+    return random.randint(self.attributes["Low"], self.attributes["High"])
+
+  def get_damage_type(self):
+    return self.attributes["Type"]
+
+  def get_recycled_materials(self):
+    materials = [0] * len(RARITY)
+    for _ in xrange(self.item_level):
+      # Will slightly push range down due to rounding
+      rarity = int(self.rarity + random.gauss(0, 1))
+      if rarity < 0:
+        continue
+      if rarity >= len(RARITY):
+        rarity = len(RARITY) - 1
+      materials[rarity] += 1
+    return materials
+
+  @classmethod
+  def materials_string(cls, materials):
+    pieces = []
+    for i in xrange(len(materials)):
+      if materials[i] > 0:
+        pieces.append("%d %s materials" % (materials[i], RARITY[i]))
+    if pieces:
+      return ", ".join(pieces)
+    else:
+      return "no materials"
 
   @classmethod
   def get_new_armor(cls, item_level, slot=None, require=None, rarity=1):
@@ -43,6 +77,22 @@ class Equipment(object):
                                                               rarity)
     for defense in DEFENSES:
       attributes[defense] = cls.make_stat_value(item_level, rarity)
+    if SLOTS[slot] == "Weapon":
+      rarity_factor = 1.0 + (.1 * rarity)
+      low = int((10 + 5 * item_level) * random.gauss(1, .2) * rarity_factor)
+      high = int((20 + 7 * item_level) * random.gauss(1, .2) * rarity_factor)
+      if low > high:
+        low, high = high, low
+      if low < 1:
+        low = 1
+      attributes["Low"] = low
+      attributes["High"] = high
+      if require == "Strength":
+        attributes["Type"] = "Physical"
+      elif require == "Intellect":
+        attributes["Type"] = "Magic"
+      else:
+        attributes["Type"] = random.choice(("Magic", "Physical"))
     return Equipment(item_level, attributes, slot, rarity)
 
   def __str__(self):
@@ -50,6 +100,10 @@ class Equipment(object):
     pieces.append(SLOTS[self.slot])
     pieces.append(":")
     pieces.append("(%d %s)" % (self.item_level, RARITY[self.rarity][0]))
+    if SLOTS[self.slot] == "Weapon":
+      pieces.append("(%s %d-%d)" % (self.attributes["Type"],
+                                    self.attributes["Low"],
+                                    self.attributes["High"]))
     defense_pieces = []
     stat_pieces = []
     for attribute in self.attributes:
@@ -61,7 +115,7 @@ class Equipment(object):
         defense_pieces.append("%d %s" % (self.attributes[attribute],
                                          ABBREVIATIONS[attribute]))
       else:
-        assert False
+        assert attribute in WEAPON_STATS
     pieces.append("(%s)" % "/".join(defense_pieces))
     pieces.append(" ".join(stat_pieces))
     return " ".join(pieces)
