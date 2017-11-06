@@ -20,6 +20,7 @@ def write_color_text(rtc, string):
     r, g, b = map(int, color_string.split(","))
     rtc.BeginTextColour((r, g, b))
     rtc.WriteText(tokens.pop(0))
+  rtc.ShowPosition(rtc.GetLastPosition())
 
 class ButtonPanel(wx.Panel):
   def __init__(self, parent):
@@ -66,18 +67,17 @@ class CharacterPanel(wx.Panel):
 class LogPanel(wx.Panel):
   def __init__(self, parent):
     wx.Panel.__init__(self, parent, wx.NewId())
-    self.text_field = wx.TextCtrl(self, value="",
-                                  style=wx.TE_READONLY | wx.TE_MULTILINE |
-                                        wx.BORDER)
+    self.text_field = wx.richtext.RichTextCtrl(self, value="",
+                                               style=wx.TE_READONLY |
+                                                     wx.TE_MULTILINE |
+ 																										 wx.BORDER)
     bsizer = wx.BoxSizer()
     bsizer.Add(self.text_field, 1, wx.EXPAND)
     self.SetSizerAndFit(bsizer)
 
   def add_entry(self, text):
-    self.text_field.AppendText(time.strftime("%m/%d/%y %H:%M:%S: ",
-                                             time.localtime()))
-    self.text_field.AppendText(text)
-    self.text_field.AppendText("\n")
+    line = time.strftime("%m/%d/%y %H:%M:%S: ", time.localtime()) + text + "\n"
+    write_color_text(self.text_field, line)
 
 class EncounterPanel(wx.Panel):
   def __init__(self, parent):

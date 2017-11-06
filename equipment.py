@@ -6,6 +6,8 @@ STATS = ["Strength", "Stamina", "Speed", "Intellect"]
 DEFENSES = ["Defense", "Magic Defense"]
 SLOTS = ["Weapon", "Helm", "Chest", "Legs", "Accessory"]
 RARITY = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
+RARITY_COLORS = ["`160,160,160`", "`0,160,0`", "`0,0,160`", "`160,0,160`",
+                 "`255,140,0`"]
 ABBREVIATIONS = {"Defense": "Def",
                  "Magic Defense": "MDef"}
 WEAPON_STATS = ["Low", "High", "Type"]
@@ -133,10 +135,11 @@ class Equipment(object):
   def __str__(self):
     pieces = []
     pieces.append(SLOTS[self.slot])
-    pieces.append(":")
-    pieces.append("(%d %s)" % (self.item_level, RARITY[self.rarity][0]))
+    pieces.append(": ")
+    pieces.append(RARITY_COLORS[self.rarity])
+    pieces.append("(%d %s) " % (self.item_level, RARITY[self.rarity][0]))
     if SLOTS[self.slot] == "Weapon":
-      pieces.append("(%s %d-%d)" % (self.attributes["Type"],
+      pieces.append("(%s %d-%d) " % (self.attributes["Type"],
                                     self.attributes["Low"],
                                     self.attributes["High"]))
     defense_pieces = []
@@ -144,13 +147,13 @@ class Equipment(object):
     for attribute in self.attributes:
       if attribute in STATS:
         if self.attributes[attribute] > 0:
-          value = "+" + str(self.attributes[attribute])
-          stat_pieces.append("%s %s" % (value, attribute))
+          stat_pieces.append("%+d %s " % (self.attributes[attribute],attribute))
       elif attribute in DEFENSES:
         defense_pieces.append("%d %s" % (self.attributes[attribute],
                                          ABBREVIATIONS[attribute]))
       else:
         assert attribute in WEAPON_STATS
-    pieces.append("(%s)" % "/".join(defense_pieces))
-    pieces.append(" ".join(stat_pieces))
-    return " ".join(pieces)
+    pieces.append("(%s) " % " / ".join(defense_pieces))
+    pieces.append("".join(stat_pieces))
+    pieces.append("`0,0,0`")
+    return "".join(pieces)
