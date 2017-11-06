@@ -31,15 +31,15 @@ class Equipment(object):
     assert old.slot == new.slot
     pieces = []
     attributes = set().union(old.attributes, new.attributes)
-    for a in attributes:
-      if a not in STATS and a not in DEFENSES:
+    for attr in attributes:
+      if attr not in STATS and attr not in DEFENSES:
         continue
-      old_attribute = old.attributes[a] if a in old.attributes else 0
-      new_attribute = new.attributes[a] if a in new.attributes else 0
+      old_attribute = old.attributes[attr] if attr in old.attributes else 0
+      new_attribute = new.attributes[attr] if attr in new.attributes else 0
       difference = new_attribute - old_attribute
       if difference != 0:
         color_string = "`255,0,0`" if difference < 0 else "`0,160,0`"
-        pieces.append("%s%+d %s" % (color_string, difference, a))
+        pieces.append("%s%+d %s" % (color_string, difference, attr))
     if old.slot == 0:
       # TODO: Might be worth having an "Average Damage" attribute
       old_average = (old.attributes["Low"] + old.attributes["High"]) / 2.0
@@ -140,19 +140,19 @@ class Equipment(object):
     pieces.append("(%d %s) " % (self.item_level, RARITY[self.rarity][0]))
     if SLOTS[self.slot] == "Weapon":
       pieces.append("(%s %d-%d) " % (self.attributes["Type"],
-                                    self.attributes["Low"],
-                                    self.attributes["High"]))
+                                     self.attributes["Low"],
+                                     self.attributes["High"]))
     defense_pieces = []
     stat_pieces = []
-    for attribute in self.attributes:
-      if attribute in STATS:
-        if self.attributes[attribute] > 0:
-          stat_pieces.append("%+d %s " % (self.attributes[attribute],attribute))
-      elif attribute in DEFENSES:
-        defense_pieces.append("%d %s" % (self.attributes[attribute],
-                                         ABBREVIATIONS[attribute]))
+    for attr in self.attributes:
+      if attr in STATS:
+        if self.attributes[attr] > 0:
+          stat_pieces.append("%+d %s " % (self.attributes[attr], attr))
+      elif attr in DEFENSES:
+        defense_pieces.append("%d %s" % (self.attributes[attr],
+                                         ABBREVIATIONS[attr]))
       else:
-        assert attribute in WEAPON_STATS
+        assert attr in WEAPON_STATS
     pieces.append("(%s) " % " / ".join(defense_pieces))
     pieces.append("".join(stat_pieces))
     pieces.append("`0,0,0`")

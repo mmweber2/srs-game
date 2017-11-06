@@ -17,7 +17,7 @@ def write_color_text(rtc, string):
   rtc.WriteText(tokens.pop(0))
   while tokens:
     color_string = tokens.pop(0)
-    r, g, b = map(int, color_string.split(","))
+    r, g, b = map(int, color_string.split(","))  # pylint: disable=invalid-name
     rtc.BeginTextColour((r, g, b))
     rtc.WriteText(tokens.pop(0))
   rtc.ShowPosition(rtc.GetLastPosition())
@@ -52,10 +52,8 @@ class ButtonPanel(wx.Panel):
 class CharacterPanel(wx.Panel):
   def __init__(self, parent):
     wx.Panel.__init__(self, parent, wx.NewId())
-    self.text_field = wx.richtext.RichTextCtrl(self, value="",
-                                               style=wx.TE_READONLY |
-                                                     wx.TE_MULTILINE |
- 																										 wx.BORDER)
+    style = wx.TE_READONLY | wx.TE_MULTILINE | wx.BORDER
+    self.text_field = wx.richtext.RichTextCtrl(self, value="", style=style)
     bsizer = wx.BoxSizer(wx.VERTICAL)
     bsizer.Add(self.text_field, 1, wx.EXPAND)
     self.SetSizerAndFit(bsizer)
@@ -67,10 +65,8 @@ class CharacterPanel(wx.Panel):
 class LogPanel(wx.Panel):
   def __init__(self, parent):
     wx.Panel.__init__(self, parent, wx.NewId())
-    self.text_field = wx.richtext.RichTextCtrl(self, value="",
-                                               style=wx.TE_READONLY |
-                                                     wx.TE_MULTILINE |
- 																										 wx.BORDER)
+    style = wx.TE_READONLY | wx.TE_MULTILINE | wx.BORDER
+    self.text_field = wx.richtext.RichTextCtrl(self, value="", style=style)
     bsizer = wx.BoxSizer()
     bsizer.Add(self.text_field, 1, wx.EXPAND)
     self.SetSizerAndFit(bsizer)
@@ -82,10 +78,8 @@ class LogPanel(wx.Panel):
 class EncounterPanel(wx.Panel):
   def __init__(self, parent):
     wx.Panel.__init__(self, parent, wx.NewId())
-    self.text_field = wx.richtext.RichTextCtrl(self, value="",
-                                               style=wx.TE_READONLY |
-                                                     wx.TE_MULTILINE |
- 																										 wx.BORDER)
+    style = wx.TE_READONLY | wx.TE_MULTILINE | wx.BORDER
+    self.text_field = wx.richtext.RichTextCtrl(self, value="", style=style)
     bsizer = wx.BoxSizer()
     bsizer.Add(self.text_field, 1, wx.EXPAND)
     self.SetSizerAndFit(bsizer)

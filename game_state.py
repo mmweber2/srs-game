@@ -10,8 +10,8 @@ TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
                   "Temple", "Inn", "Weaponsmith"]
 TOWER_LEVELS = 100
 UPDATE_TIME = 360
-DEBUG_BUILDING = "Weaponsmith"
-#DEBUG_BUILDING = None
+#DEBUG_BUILDING = "Weaponsmith"
+DEBUG_BUILDING = None
 
 # TODO: Add time costs to everything.
 #       When we do this, have a function that applies time so we can also
@@ -89,7 +89,7 @@ class GameState(object):
     shops = [None]
     for i in xrange(1, TOWER_LEVELS + 1):
       weapons = []
-      for j in range(3):  
+      for _ in range(3):
         weapons.append(Equipment.get_new_armor(i, 0))  # 0 -> weapon slot
       shops.append(weapons)
     return shops
@@ -380,6 +380,7 @@ class GameState(object):
       self.add_state("BUY_EQUIPMENT")
       self.piece_to_buy = self.armor_shops[self.floor][choice - 1]
       self.shop_choice = choice - 1
+      logs.append("You consider %s..." % choice_text)
     elif choice_text == "Leave Shop":
       self.leave_state()
 
@@ -389,6 +390,7 @@ class GameState(object):
       self.add_state("BUY_EQUIPMENT")
       self.piece_to_buy = self.weapon_shops[self.floor][choice - 1]
       self.shop_choice = choice - 1
+      logs.append("You consider %s..." % choice_text)
     elif choice_text == "Leave Shop":
       self.leave_state()
 
@@ -404,7 +406,7 @@ class GameState(object):
       else:
         assert False
       equipment = self.piece_to_buy
-      value = equipment.get_value() 
+      value = equipment.get_value()
       if self.character.gold >= value:
         self.pass_time(1, logs)
         self.character.gold -= value
@@ -425,7 +427,6 @@ class GameState(object):
     slot = equip.slot
     return self.equipment_comparison_text(self.character.equipment[slot],
                                           equip)
-    return "".join(pieces)
 
   def apply_choice_outside(self, logs, choice_text):
     if choice_text == "Ascend Tower":
@@ -488,7 +489,8 @@ class GameState(object):
         self.leave_state()
     return logs
 
-  def equipment_comparison_text(self, current, new):
+  @staticmethod
+  def equipment_comparison_text(current, new):
     pieces = []
     pieces.append("Current Equipment:\n")
     pieces.append(str(current))
@@ -504,14 +506,14 @@ class GameState(object):
     slot = self.equipment_choice.slot
     return self.equipment_comparison_text(self.character.equipment[slot],
                                           self.equipment_choice)
-    return "".join(pieces)
 
-  def armor_shop_text(self, shop, label):
+  @staticmethod
+  def armor_shop_text(shop, label):
     pieces = []
-    for i in range(len(shop)):
-      if shop[i] is not None:
-        pieces.append("%s #%d  (%d gold)" % (label, i + 1, shop[i].get_value()))
-        pieces.append(str(shop[i]))
+    for i, item in enumerate(shop):
+      if item is not None:
+        pieces.append("%s #%d  (%d gold)" % (label, i + 1, item.get_value()))
+        pieces.append(str(item))
     if not pieces:
       pieces.append("You cleaned 'em out!")
     return "\n".join(pieces)
