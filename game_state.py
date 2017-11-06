@@ -54,6 +54,8 @@ class GameState(object):
     # When we defeat a monster, treasure goes here so we can handle it a piece
     # at a time
     self.treasure_queue = []
+    # TODO: This is starting to get a little unwieldy. Clean up?
+    #       There is probably a cleaner way to track all this shop state
     self.equipment_choice = None
     self.shop_choice = None
     self.piece_to_buy = None
