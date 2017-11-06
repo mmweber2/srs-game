@@ -24,6 +24,12 @@ class Equipment(object):
     #       Figure out what is reasonable against growing monster stamina
     #       2-3 hits against a normal monster is probably about right
 
+  #@classmethod
+  #def comparison_text(cls, current, new):
+  #  pieces = []
+  #  attributes = set().union(current.attributes, new.attributes)
+  # START HERE
+
   def get_stat_value(self, stat):
     return self.attributes[stat]
 
@@ -62,6 +68,16 @@ class Equipment(object):
       return ", ".join(pieces)
     else:
       return "no materials"
+
+  def get_value(self):
+    value = self.item_level * 25
+    for attribute in STATS + DEFENSES:
+      value += self.attributes[attribute] ** 2
+    value *= max(1, self.rarity - 1)
+    if self.slot == 0:  # Weapon
+      average_damage = (self.attributes["Low"] + self.attributes["High"]) / 2
+      value += average_damage
+    return value
 
   @classmethod
   def get_new_armor(cls, item_level, slot=None, require=None, rarity=1):

@@ -10,6 +10,8 @@ TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
                   "Temple", "Inn", "Weaponsmith"]
 TOWER_LEVELS = 100
 UPDATE_TIME = 360
+#DEBUG_BUILDING = "Armorer"
+DEBUG_BUILDING = None
 
 # TODO: Add time costs to everything.
 #       When we do this, have a function that applies time so we can also
@@ -39,9 +41,10 @@ class GameState(object):
     # When you complete a quest on a level, you gain some faction for that level
     # and some for surrounding levels, decreasing cost of things?
     self.tower_faction = [0] * (TOWER_LEVELS + 1)
-    # TODO. This is to prevent quest scumming.
+    # This is to prevent quest/shop scumming
     self.tower_quests = self.generate_quests()
-    # TODO: Same with shop contents? Should it reset at some point?
+    self.armor_shops = self.generate_armor_shops()
+    self.weapon_shops = self.generate_weapon_shops()
     # Number of encounters remaining in current tower ascension
     # Could be battles or other things (finding treasure, finding a shop)
     self.ascension_encounters = 0
@@ -52,13 +55,42 @@ class GameState(object):
     # at a time
     self.treasure_queue = []
     self.equipment_choice = None
+    self.shop_choice = None
+    self.piece_to_buy = None
+
+  ###
+  # Helper methods for changing state
+  ###
 
   @staticmethod
   def generate_quests():
     quests = [None]
-    for i in xrange(1, 101):
+    for i in xrange(1, TOWER_LEVELS + 1):
       quests.append(Quest(i))
     return quests
+
+  @staticmethod
+  def generate_armor_shops():
+    # TODO: Don't necessarily have to generate armor for every level, since
+    #       not every level has an armor shop. But this is simple.
+    shops = [None]
+    for i in xrange(1, TOWER_LEVELS + 1):
+      armor = []
+      for j in range(1, 4):  # Slots for armor pieces. TODO: A bit hacky
+        armor.append(Equipment.get_new_armor(i, j))
+      shops.append(armor)
+    return shops
+
+  @staticmethod
+  def generate_weapon_shops():
+    # TODO: Same with weapon shops
+    shops = [None]
+    for i in xrange(1, TOWER_LEVELS + 1):
+      weapons = []
+      for j in range(3):  
+        weapons.append(Equipment.get_new_armor(i, 0))  # 0 -> weapon slot
+      shops.append(weapons)
+    return shops
 
   @staticmethod
   def generate_towns():
@@ -69,15 +101,15 @@ class GameState(object):
       while len(shop_set) < 3:
         shop_set.add(random.choice(TOWN_BUILDINGS))
       tower.append(("Leave Town",) + tuple(shop_set))
+    if DEBUG_BUILDING:
+      tower[1] = ("Leave Town", DEBUG_BUILDING, "DEBUG", "DEBUG")
     return tower
-
-  def current_state(self):
-    """Return the current state."""
-    return self.state[-1]
 
   def tower_update(self):
     # TODO: Update quests, inventories, etc, since 6 hours has passed
     self.tower_quests = self.generate_quests()
+    self.armor_shops = self.generate_armor_shops()
+    self.weapon_shops = self.generate_weapon_shops()
 
   def time_to_refresh(self):
     return UPDATE_TIME - (self.time_spent % UPDATE_TIME)
@@ -91,6 +123,11 @@ class GameState(object):
       # TODO: Better text?
       logs.append("Tower has updated")
 
+  def current_state(self):
+    """Return the current state."""
+    return self.state[-1]
+
+
   # TODO: Clean this up. While some of them require logic, a lot of them do not,
   #       so we could move those to a dictionary, and leave only the ones that
   #       require logic
@@ -102,15 +139,31 @@ class GameState(object):
     elif current_state == "TOWN":
       return self.towns[self.floor]
     elif current_state == "ARMORER":
-      return ["Armor 1", "Armor 2", "Armor 3", "Leave Shop"]
+      choices = []
+      for i in range(len(self.armor_shops[self.floor])):
+        if self.armor_shops[self.floor][i] is not None:
+          choices.append("Armor #%d" % (i + 1))
+        else:
+          choices.append("")
+      choices.append("Leave Shop")
+      return choices
     elif current_state == "WEAPONSMITH":
-      return ["Weapon 1", "Weapon 2", "Weapon 3", "Leave Shop"]
+      # TODO: Clean up duplication with Armorer?
+      choices = []
+      for i in range(len(self.weapon_shops[self.floor])):
+        if self.weapon_shops[self.floor][i] is not None:
+          choices.append("Weapon #%d" % (i + 1))
+        else:
+          choices.append("")
+      choices.append("Leave Shop")
+      return choices
     elif current_state == "ENCHANTER":
       return ["Enchant Weapon", "Enchant Armor", "Enchant Accessory",
               "Leave Shop"]
     elif current_state == "ALCHEMIST":
       return ["Item 1", "Item 2", "Item 3", "Leave Shop"]
     elif current_state == "TRAINING":
+      # TODO: Train stats instead of train skill?
       return ["Gain XP", "Train Skill", "Train Passives", "Leave Shop"]
     elif current_state == "FORGE":
       return ["", "Reforge Weapon", "Reforge Armor", "Leave Shop"]
@@ -129,6 +182,8 @@ class GameState(object):
       return ["Attack", "Skill", "Item", "Escape"]
     elif current_state == "LOOT_EQUIPMENT":
       return ["", "Keep Current", "Keep New", ""]
+    elif current_state == "BUY_EQUIPMENT":
+      return ["", "Keep Current", "Buy", ""]
     elif current_state == "ACCEPT_QUEST":
       return ["", "Accept Quest", "Decline Quest", ""]
     elif current_state == "QUEST":
@@ -231,8 +286,6 @@ class GameState(object):
       if self.current_state() == "OUTSIDE":
         self.tower_quests[self.floor] = None
       self.handle_treasure(logs)
-  # START HERE: Do more testing on quests, clean up code with pylint, and then
-  #             clear out a few relevant TODOs
 
   def apply_choice_tower(self, logs, choice_text):
     if choice_text == "Explore":
@@ -265,6 +318,7 @@ class GameState(object):
   def apply_death(self, logs):
     self.character.apply_death(logs)
     self.leave_state()  # COMBAT
+    # TODO: This is hacky. Should probably have TOWER also be an add_state
     if self.current_state() == "QUEST":
       self.leave_state()
     self.change_state("TOWN")
@@ -273,7 +327,6 @@ class GameState(object):
     # TODO: Give quest monsters back their HP
 
   def apply_choice_combat(self, logs, choice_text):
-    # return ["Attack", "Skill", "Item", "Escape"]
     if choice_text == "Attack":
       self.pass_time(1, logs)
       result = Combat.perform_turn("Attack", None, self.character, self.monster,
@@ -318,6 +371,59 @@ class GameState(object):
       logs.append("Went to the %s" % choice_text)
       next_state = choice_text.upper()
       self.add_state(next_state)
+
+  def apply_choice_armorer(self, logs, choice_text):
+    if choice_text.startswith("Armor #"):
+      choice = int(choice_text[-1])
+      self.add_state("BUY_EQUIPMENT")
+      self.piece_to_buy = self.armor_shops[self.floor][choice - 1]
+      self.shop_choice = choice - 1
+    elif choice_text == "Leave Shop":
+      self.leave_state()
+
+  def apply_choice_weaponsmith(self, logs, choice_text):
+    if choice_text.startswith("Weapon #"):
+      choice = int(choice_text[-1])
+      self.add_state("BUY_EQUIPMENT")
+      self.piece_to_buy = self.weapon_shops[self.floor][choice - 1]
+      self.shop_choice = choice - 1
+    elif choice_text == "Leave Shop":
+      self.leave_state()
+
+  def apply_choice_buy_equipment(self, logs, choice_text):
+    self.leave_state()
+    if choice_text == "Keep Current":
+      pass
+    elif choice_text == "Buy":
+      if self.current_state() == "ARMORER":
+        shop = self.armor_shops[self.floor]
+      elif self.current_state() == "WEAPONSMITH":
+        shop = self.weapon_shops[self.floor]
+      else:
+        assert False
+      equipment = self.piece_to_buy
+      value = equipment.get_value() 
+      if self.character.gold >= value:
+        self.pass_time(1, logs)
+        self.character.gold -= value
+        recycle = self.character.equip(equipment)
+        shop[self.shop_choice] = None
+        self.shop_choice = None
+        self.piece_to_buy = None
+        logs.append("Purchased %s for %d gold." % (str(equipment), value))
+        logs.append("Recycled %s" % recycle)
+        materials = recycle.get_recycled_materials()
+        self.character.gain_materials(materials)
+        logs.append("Received %s" % Equipment.materials_string(materials))
+      else:
+        logs.append("You do not have enough money.")
+
+  def buy_equipment_choice_text(self):
+    equip = self.piece_to_buy
+    slot = equip.slot
+    return self.equipment_comparison_text(self.character.equipment[slot],
+                                          equip)
+    return "".join(pieces)
 
   def apply_choice_outside(self, logs, choice_text):
     if choice_text == "Ascend Tower":
@@ -380,15 +486,33 @@ class GameState(object):
         self.leave_state()
     return logs
 
-  def equipment_choice_text(self):
+  def equipment_comparison_text(self, current, new):
     pieces = []
-    slot = self.equipment_choice.slot
     pieces.append("Current Equipment:\n")
-    pieces.append(str(self.character.equipment[slot]))
+    pieces.append(str(current))
     pieces.append("\nNew Equipment:\n")
-    pieces.append(str(self.equipment_choice))
+    pieces.append(str(new))
+    pieces.append("\nComparison:\n")
+    #pieces.append(Equipment.comparison_text(current, new))
+    pieces.append("Not implemented")
     # TODO: Show difference between two pieces of equipment
     return "".join(pieces)
+
+  def loot_choice_text(self):
+    slot = self.equipment_choice.slot
+    return self.equipment_comparison_text(self.character.equipment[slot],
+                                          self.equipment_choice)
+    return "".join(pieces)
+
+  def armor_shop_text(self, shop, label):
+    pieces = []
+    for i in range(len(shop)):
+      if shop[i] is not None:
+        pieces.append("%s #%d  (%d gold)" % (label, i + 1, shop[i].get_value()))
+        pieces.append(str(shop[i]))
+    if not pieces:
+      pieces.append("You cleaned 'em out!")
+    return "\n".join(pieces)
 
   # TODO: This and get_choices should probably be done differently (with a dict
   #       for example
@@ -407,8 +531,14 @@ class GameState(object):
     elif current_state == "COMBAT":
       return str(self.monster)
     elif current_state == "LOOT_EQUIPMENT":
-      return self.equipment_choice_text()
+      return self.loot_choice_text()
+    elif current_state == "BUY_EQUIPMENT":
+      return self.buy_equipment_choice_text()
     elif current_state == "ACCEPT_QUEST" or current_state == "QUEST":
       return str(self.tower_quests[self.floor])
+    elif current_state == "ARMORER":
+      return self.armor_shop_text(self.armor_shops[self.floor], "Armor")
+    elif current_state == "WEAPONSMITH":
+      return self.armor_shop_text(self.weapon_shops[self.floor], "Weapon")
     else:
       return "Error, no text for state %s" % current_state
