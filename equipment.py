@@ -24,11 +24,30 @@ class Equipment(object):
     #       Figure out what is reasonable against growing monster stamina
     #       2-3 hits against a normal monster is probably about right
 
-  #@classmethod
-  #def comparison_text(cls, current, new):
-  #  pieces = []
-  #  attributes = set().union(current.attributes, new.attributes)
-  # START HERE
+  @classmethod
+  def comparison_text(cls, old, new):
+    assert old.slot == new.slot
+    pieces = []
+    attributes = set().union(old.attributes, new.attributes)
+    for a in attributes:
+      if a not in STATS and a not in DEFENSES:
+        continue
+      old_attribute = old.attributes[a] if a in old.attributes else 0
+      new_attribute = new.attributes[a] if a in new.attributes else 0
+      difference = new_attribute - old_attribute
+      if difference != 0:
+        color_string = "`255,0,0`" if difference < 0 else "`0,160,0`"
+        pieces.append("%s%+d %s" % (color_string, difference, a))
+    if old.slot == 0:
+      # TODO: Might be worth having an "Average Damage" attribute
+      old_average = (old.attributes["Low"] + old.attributes["High"]) / 2.0
+      new_average = (new.attributes["Low"] + new.attributes["High"]) / 2.0
+      difference = new_average - old_average
+      color = "`255,0,0`" if difference < 0 else "`0,160,0`"
+      pieces.append("%s%+0.1f average damage" % (color, difference))
+      if old.attributes["Type"] != new.attributes["Type"]:
+        pieces.append("`0,0,0`Weapon type change")
+    return "\n".join(pieces)
 
   def get_stat_value(self, stat):
     return self.attributes[stat]

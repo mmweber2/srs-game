@@ -10,8 +10,8 @@ TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
                   "Temple", "Inn", "Weaponsmith"]
 TOWER_LEVELS = 100
 UPDATE_TIME = 360
-#DEBUG_BUILDING = "Armorer"
-DEBUG_BUILDING = None
+DEBUG_BUILDING = "Weaponsmith"
+#DEBUG_BUILDING = None
 
 # TODO: Add time costs to everything.
 #       When we do this, have a function that applies time so we can also
@@ -495,10 +495,10 @@ class GameState(object):
     pieces.append("\nNew Equipment:\n")
     pieces.append(str(new))
     pieces.append("\nComparison:\n")
-    #pieces.append(Equipment.comparison_text(current, new))
-    pieces.append("Not implemented")
+    pieces.append(Equipment.comparison_text(current, new))
     # TODO: Show difference between two pieces of equipment
     return "".join(pieces)
+
 
   def loot_choice_text(self):
     slot = self.equipment_choice.slot

@@ -3,7 +3,23 @@
 import time
 from game_state import GameState
 import wx
+import wx.richtext
 
+def write_color_text(rtc, string):
+  # Takes a wx.richtext.RichTextCtrl and writes my wacky custom color-coded
+  # text out to it.
+  # Colors are specified via `r,g,b` in the text
+  # TODO: There might be some better way to do this via the control's XML?
+  # Note: Assumes there are no "`" in the text.
+  tokens = string.split("`")
+  rtc.BeginTextColour((0, 0, 0))
+  rtc.BeginParagraphSpacing(0, 0)
+  rtc.WriteText(tokens.pop(0))
+  while tokens:
+    color_string = tokens.pop(0)
+    r, g, b = map(int, color_string.split(","))
+    rtc.BeginTextColour((r, g, b))
+    rtc.WriteText(tokens.pop(0))
 
 class ButtonPanel(wx.Panel):
   def __init__(self, parent):
@@ -30,23 +46,29 @@ class ButtonPanel(wx.Panel):
       else:
         self.buttons[i].Enable(True)
 
+# TODO: Aren't these three panels all similar? We should be able to clean that
+#       up
 class CharacterPanel(wx.Panel):
   def __init__(self, parent):
     wx.Panel.__init__(self, parent, wx.NewId())
-    self.text_field = wx.TextCtrl(self, value="",
-                                  style=wx.TE_READONLY | wx.TE_MULTILINE)
+    self.text_field = wx.richtext.RichTextCtrl(self, value="",
+                                               style=wx.TE_READONLY |
+                                                     wx.TE_MULTILINE |
+ 																										 wx.BORDER)
     bsizer = wx.BoxSizer(wx.VERTICAL)
     bsizer.Add(self.text_field, 1, wx.EXPAND)
     self.SetSizerAndFit(bsizer)
 
   def update_character(self, game_state):
-    self.text_field.SetValue(str(game_state.character))
+    self.text_field.SetValue("")
+    write_color_text(self.text_field, str(game_state.character))
 
 class LogPanel(wx.Panel):
   def __init__(self, parent):
     wx.Panel.__init__(self, parent, wx.NewId())
     self.text_field = wx.TextCtrl(self, value="",
-                                  style=wx.TE_READONLY | wx.TE_MULTILINE)
+                                  style=wx.TE_READONLY | wx.TE_MULTILINE |
+                                        wx.BORDER)
     bsizer = wx.BoxSizer()
     bsizer.Add(self.text_field, 1, wx.EXPAND)
     self.SetSizerAndFit(bsizer)
@@ -60,14 +82,17 @@ class LogPanel(wx.Panel):
 class EncounterPanel(wx.Panel):
   def __init__(self, parent):
     wx.Panel.__init__(self, parent, wx.NewId())
-    self.text_field = wx.TextCtrl(self, value="",
-                                  style=wx.TE_READONLY | wx.TE_MULTILINE)
+    self.text_field = wx.richtext.RichTextCtrl(self, value="",
+                                               style=wx.TE_READONLY |
+                                                     wx.TE_MULTILINE |
+ 																										 wx.BORDER)
     bsizer = wx.BoxSizer()
     bsizer.Add(self.text_field, 1, wx.EXPAND)
     self.SetSizerAndFit(bsizer)
 
   def update(self, game_state):
-    self.text_field.SetValue(str(game_state.panel_text()))
+    self.text_field.SetValue("")
+    write_color_text(self.text_field, str(game_state.panel_text()))
 
 class MainWindow(wx.Frame):
   # pylint: disable=too-many-instance-attributes
