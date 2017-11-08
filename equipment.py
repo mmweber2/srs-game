@@ -28,6 +28,18 @@ class Equipment(object):
     self.enchant_count = 0
     self.reforge_count = 0
 
+  @staticmethod
+  def equipment_comparison_text(current, new):
+    pieces = []
+    pieces.append("Current Equipment:\n")
+    pieces.append(str(current))
+    pieces.append("\nNew Equipment:\n")
+    pieces.append(str(new))
+    pieces.append("\nComparison:\n")
+    pieces.append(Equipment.comparison_text(current, new))
+    # TODO: Show difference between two pieces of equipment
+    return "".join(pieces)
+
   @classmethod
   def comparison_text(cls, old, new):
     assert old.slot == new.slot
@@ -53,13 +65,6 @@ class Equipment(object):
         pieces.append("`0,0,0`Weapon type change")
     return "\n".join(pieces)
 
-  # TODO: If we make an Enchanter shop class, these should probably move there.
-  def enchant_cost_gold(self):
-    return self.item_level * 25 * ((self.enchant_count + 1) ** 2)
-
-  def enchant_cost_materials(self):
-    return self.item_level * (self.enchant_count + 1) / 2
-
   def enchant(self):
     self.enchant_count += 1
     enchanted_stat = random.choice(STATS)
@@ -74,15 +79,6 @@ class Equipment(object):
 
   def get_stat_value(self, stat):
     return self.attributes[stat]
-
-  def reforge_cost_gold(self, level):
-    return (level - self.item_level) * (25 * ((self.reforge_count + 1) ** 2))
-
-  def reforge_cost_materials(self, level):
-    return (level - self.item_level) * (self.reforge_count + 1)
-
-  def reforgable(self, level):
-    return level > self.item_level
 
   def reforge(self, level):
     # TODO: Fix c/p code?
@@ -101,12 +97,12 @@ class Equipment(object):
     max_gains = 2 * (level - self.item_level)
     def_gains = [0, 0]
     for _ in xrange(max_gains):
-      stat_gains[random.randint(0, 1)] += 1
+      def_gains[random.randint(0, 1)] += 1
     for i in range(2):
-      stat_gains[i] = random.randint(stat_gains[i] / 2, stat_gains[i])
-      self.attributes[DEFENSES[i]] += stat_gains[i]
-      if stat_gains[i] > 0:
-        result_pieces.append("%+d %s" % (stat_gains[i], DEFENSES[i]))
+      def_gains[i] = random.randint(def_gains[i] / 2, def_gains[i])
+      self.attributes[DEFENSES[i]] += def_gains[i]
+      if def_gains[i] > 0:
+        result_pieces.append("%+d %s" % (def_gains[i], DEFENSES[i]))
     # Weapon Stats
     if self.slot == 0:
       rarity_factor = 1.0 + (.1 * self.rarity)
@@ -232,11 +228,3 @@ class Equipment(object):
     pieces.append("".join(stat_pieces))
     pieces.append("`0,0,0`")
     return "".join(pieces)
-
-if __name__ == "__main__":
-  for i in xrange(5):
-    equip = Equipment.get_new_armor(10, slot=i, rarity=4)
-    print equip
-    print equip.reforge(20)
-    print equip
-    print "---"

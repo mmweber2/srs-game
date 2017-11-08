@@ -101,9 +101,6 @@ class Character(object):
         self.stats[stat] += increase
         logs.append("You have gained %d %s" % (increase, stat))
 
-  def stat_training_cost(self):
-    return sum(self.stats.values())
-
   def train_xp(self, level, logs):
     self.gain_exp(level * 25, level, logs, level_adjust=False)
 
