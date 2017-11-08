@@ -25,6 +25,8 @@ class Equipment(object):
     # TODO: Implement damage range for weapons
     #       Figure out what is reasonable against growing monster stamina
     #       2-3 hits against a normal monster is probably about right
+    self.enchant_count = 0
+    self.reforge_count = 0
 
   @classmethod
   def comparison_text(cls, old, new):
@@ -51,8 +53,81 @@ class Equipment(object):
         pieces.append("`0,0,0`Weapon type change")
     return "\n".join(pieces)
 
+  # TODO: If we make an Enchanter shop class, these should probably move there.
+  def enchant_cost_gold(self):
+    return self.item_level * 25 * ((self.enchant_count + 1) ** 2)
+
+  def enchant_cost_materials(self):
+    return self.item_level * (self.enchant_count + 1) / 2
+
+  def enchant(self):
+    self.enchant_count += 1
+    enchanted_stat = random.choice(STATS)
+    amount = random.randint(max(1, self.item_level / 4),
+                            max(1, self.item_level / 2))
+    amount = int(amount * (1.0 + 0.25 * self.rarity))
+    if enchanted_stat in self.attributes:
+      self.attributes[enchanted_stat] += amount
+    else:
+      self.attributes[enchanted_stat] = amount
+    return "%+d %s" % (amount, enchanted_stat)
+
   def get_stat_value(self, stat):
     return self.attributes[stat]
+
+  def reforge_cost_gold(self, level):
+    return (level - self.item_level) * (25 * ((self.reforge_count + 1) ** 2))
+
+  def reforge_cost_materials(self, level):
+    return (level - self.item_level) * (self.reforge_count + 1)
+
+  def reforgable(self, level):
+    return level > self.item_level
+
+  def reforge(self, level):
+    # TODO: Fix c/p code?
+    result_pieces = []
+    # Stats
+    max_gains = (self.rarity + 1) * (level - self.item_level)
+    stat_gains = [0, 0, 0, 0]
+    for _ in xrange(max_gains):
+      stat_gains[random.randint(0, 3)] += 1
+    for i in range(4):
+      stat_gains[i] = random.randint(stat_gains[i] / 2, stat_gains[i])
+      self.attributes[STATS[i]] += stat_gains[i]
+      if stat_gains[i] > 0:
+        result_pieces.append("%+d %s" % (stat_gains[i], STATS[i]))
+    # Defenses
+    max_gains = 2 * (level - self.item_level)
+    def_gains = [0, 0]
+    for _ in xrange(max_gains):
+      stat_gains[random.randint(0, 1)] += 1
+    for i in range(2):
+      stat_gains[i] = random.randint(stat_gains[i] / 2, stat_gains[i])
+      self.attributes[DEFENSES[i]] += stat_gains[i]
+      if stat_gains[i] > 0:
+        result_pieces.append("%+d %s" % (stat_gains[i], DEFENSES[i]))
+    # Weapon Stats
+    if self.slot == 0:
+      rarity_factor = 1.0 + (.1 * self.rarity)
+      low = int((10 + 5 * level) * random.gauss(1, .2) * rarity_factor)
+      high = int((20 + 7 * level) * random.gauss(1, .2) * rarity_factor)
+      old_low = self.attributes["Low"]
+      old_high = self.attributes["High"]
+      old_average = (old_low + old_high) / 2.0
+      new_low = max(low, old_low)
+      new_high = max(high, old_high)
+      if new_low > new_high:
+        new_low, new_high = new_high, new_low
+      new_average = (new_low + new_high) / 2.0
+      difference = new_average - old_average
+      if difference > 0:
+        result_pieces.append("%+0.1f average damage" % difference)
+      self.attributes["Low"] = new_low
+      self.attributes["High"] = new_high
+    self.reforge_count += 1
+    self.item_level = level
+    return " ".join(result_pieces)
 
   @classmethod
   def make_stat_value(cls, item_level, rarity):
@@ -157,3 +232,11 @@ class Equipment(object):
     pieces.append("".join(stat_pieces))
     pieces.append("`0,0,0`")
     return "".join(pieces)
+
+if __name__ == "__main__":
+  for i in xrange(5):
+    equip = Equipment.get_new_armor(10, slot=i, rarity=4)
+    print equip
+    print equip.reforge(20)
+    print equip
+    print "---"

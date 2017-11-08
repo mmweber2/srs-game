@@ -10,6 +10,7 @@ class Character(object):
                   "Intellect": 20, "Magic Defense": 20}
     self.gold = 100
     self.name = "Hero?"
+    # TODO: Have separate HP that stamina adds to?
     self.max_hp = 5 * self.stats["Stamina"]
     self.current_hp = self.max_hp
     self.level = 1
@@ -99,6 +100,17 @@ class Character(object):
       if increase > 0:
         self.stats[stat] += increase
         logs.append("You have gained %d %s" % (increase, stat))
+
+  def stat_training_cost(self):
+    return sum(self.stats.values())
+
+  def train_xp(self, level, logs):
+    self.gain_exp(level * 25, level, logs, level_adjust=False)
+
+  def train_stats(self, logs):
+    stat = random.choice(self.stats.keys())
+    self.stats[stat] += 1
+    logs.append("Gained +1 %s" % stat)
 
   def gain_materials(self, materials):
     for i in xrange(len(materials)):

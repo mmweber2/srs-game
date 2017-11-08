@@ -87,7 +87,8 @@ class Monster(object):
     return random.randint(low, high)
 
   def get_damage_type(self):
-    if self.stats["Intellect"] > self.stats["Strength"]:
+    if (self.get_effective_stat("Intellect") >
+        self.get_effective_stat("Strength")):
       return "Magic"
     else:
       return "Physical"

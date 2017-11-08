@@ -56,11 +56,14 @@ class Combat(object):
     damage = actor.get_damage()
     damage_type = actor.get_damage_type()
     if damage_type == "Physical":
-      factor = float(actor.stats["Strength"]) / target.stats["Defense"]
+      attack = actor.get_effective_stat("Strength")
+      defense = target.get_effective_stat("Defense")
     elif damage_type == "Magic":
-      factor = float(actor.stats["Intellect"]) / target.stats["Magic Defense"]
+      attack = actor.get_effective_stat("Intellect")
+      defense = target.get_effective_stat("Magic Defense")
     else:
       assert False
+    factor = float(attack) / defense
     factor = factor ** .5
     damage = int(damage * factor)
     logs.append("Hits for %d %s damage" % (damage, damage_type))
@@ -76,8 +79,8 @@ class Combat(object):
 
   @classmethod
   def skill_check(cls, stat, actor, target):
-    actor_stat = actor.stats[stat]
-    target_stat = target.stats[stat]
+    actor_stat = actor.get_effective_stat(stat)
+    target_stat = target.get_effective_stat(stat)
     total_stat = actor_stat + target_stat
     # TODO: Consider applying a dampening factor to this (like sqrt again?)
     actor_chance = float(actor_stat) / total_stat

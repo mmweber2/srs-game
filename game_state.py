@@ -3,14 +3,15 @@ import random
 from character import Character
 from monster import Monster
 from combat import Combat
-from equipment import Equipment
+from equipment import Equipment, RARITY
 from quest import Quest
 
 TOWN_BUILDINGS = ["Armorer", "Enchanter", "Alchemist", "Training", "Forge",
                   "Temple", "Inn", "Weaponsmith"]
 TOWER_LEVELS = 100
 UPDATE_TIME = 360
-#DEBUG_BUILDING = "Weaponsmith"
+#DEBUG_BUILDING = "Training"
+DEBUG_FLOOR = 1
 DEBUG_BUILDING = None
 
 # TODO: Add time costs to everything.
@@ -20,6 +21,21 @@ DEBUG_BUILDING = None
 
 # TODO: It is probably not best to be passing logs around to everything?
 #       it could be part of the GameState, or we could use a logger for real
+
+# TODO: Probably shops should be objects that track their own state and
+#       can return text and so forth, instead of this game_state kludge
+#       "Floor" can be part of that object, so maybe in the tower you find
+#       a shop that is more powerful than you "should"
+#       START HERE
+
+# TODO: Reforging is too cheap. Probably 25 * (new_level) * (level_difference)?
+
+# BUG: If you rest (and possibly just fight?) in a quest, and the tower resets,
+#      the quest resets. Actually, the quest display is wrong, it seems like
+
+# TODO: Need a place to buy accessories? Maybe?
+
+# TODO: Add top floor state
 
 class GameState(object):
   """
@@ -38,6 +54,9 @@ class GameState(object):
     self.time_spent = 0
     self.energy = 200
     self.towns = self.generate_towns()
+    self.tower_lock = [True] * (TOWER_LEVELS + 1)
+    self.tower_lock[1] = False
+    # TODO:
     # When you complete a quest on a level, you gain some faction for that level
     # and some for surrounding levels, decreasing cost of things?
     self.tower_faction = [0] * (TOWER_LEVELS + 1)
@@ -45,6 +64,7 @@ class GameState(object):
     self.tower_quests = self.generate_quests()
     self.armor_shops = self.generate_armor_shops()
     self.weapon_shops = self.generate_weapon_shops()
+    self.times_trained = [0] * (TOWER_LEVELS + 1)
     # Number of encounters remaining in current tower ascension
     # Could be battles or other things (finding treasure, finding a shop)
     self.ascension_encounters = 0
@@ -104,7 +124,7 @@ class GameState(object):
         shop_set.add(random.choice(TOWN_BUILDINGS))
       tower.append(("Leave Town",) + tuple(shop_set))
     if DEBUG_BUILDING:
-      tower[1] = ("Leave Town", DEBUG_BUILDING, "DEBUG", "DEBUG")
+      tower[DEBUG_FLOOR] = ("Leave Town", DEBUG_BUILDING, "DEBUG", "DEBUG")
     return tower
 
   def tower_update(self):
@@ -128,7 +148,6 @@ class GameState(object):
   def current_state(self):
     """Return the current state."""
     return self.state[-1]
-
 
   # TODO: Clean this up. While some of them require logic, a lot of them do not,
   #       so we could move those to a dictionary, and leave only the ones that
@@ -162,22 +181,41 @@ class GameState(object):
     elif current_state == "ENCHANTER":
       return ["Enchant Weapon", "Enchant Armor", "Enchant Accessory",
               "Leave Shop"]
+    elif current_state == "ENCHANT_ARMOR":
+      return ["Enchant Helm", "Enchant Chest", "Enchant Legs", "Never Mind"]
     elif current_state == "ALCHEMIST":
       return ["Item 1", "Item 2", "Item 3", "Leave Shop"]
     elif current_state == "TRAINING":
-      # TODO: Train stats instead of train skill?
-      return ["Gain XP", "Train Skill", "Train Passives", "Leave Shop"]
+      return ["", "Gain XP", "Gain Stats", "Leave Shop"]
     elif current_state == "FORGE":
-      return ["", "Reforge Weapon", "Reforge Armor", "Leave Shop"]
+      choices = [""]
+      if self.character.equipment[0].reforgable(self.floor):
+        choices.append("Reforge Weapon")
+      else:
+        choices.append("")
+      choices.append("Reforge Armor")
+      choices.append("Leave Shop")
+      return choices
+    elif current_state == "FORGE_ARMOR":
+      choices = []
+      for name, slot in (("Helm", 1), ("Chest", 2), ("Legs", 3)):
+        if self.character.equipment[slot].reforgable(self.floor):
+          choices.append("Reforge %s" % name)
+        else:
+          choices.append("")
+      choices.append("Never Mind")
+      return choices
     elif current_state == "TEMPLE":
       return ["", "Blessing", "Purify Rune", "Leave Temple"]
     elif current_state == "INN":
       return ["", "Rest", "Buy Food", "Leave Inn"]
     elif current_state == "OUTSIDE":
-      if self.tower_quests[self.floor] is not None:
-        return ["Ascend Tower", "Quest", "Town", "Descend Tower"]
-      else:
-        return ["Ascend Tower", "", "Town", "Descend Tower"]
+      choices = []
+      choices.append("" if self.tower_lock[self.floor] else "Ascend Tower")
+      choices.append("Quest" if self.tower_quests[self.floor] else "")
+      choices.append("Town")
+      choices.append("Descend Tower")
+      return choices
     elif current_state == "TOWER":
       return ["Explore", "Rest", "Item", "Leave Tower"]
     elif current_state == "COMBAT":
@@ -325,7 +363,7 @@ class GameState(object):
       self.leave_state()
     self.change_state("TOWN")
     self.monster = None
-    self.pass_time(random.randint(5, 5 * self.floor), logs)
+    self.pass_time(random.randint(0, 3 * self.floor), logs)
     # TODO: Give quest monsters back their HP
 
   def apply_choice_combat(self, logs, choice_text):
@@ -373,6 +411,29 @@ class GameState(object):
       logs.append("Went to the %s" % choice_text)
       next_state = choice_text.upper()
       self.add_state(next_state)
+
+  def apply_choice_training(self, logs, choice_text):
+    if choice_text == "Gain XP":
+      cost = self.floor * ((self.times_trained[self.floor] + 1) ** 2) * 50
+      if cost <= self.character.gold:
+        self.pass_time(5, logs)
+        self.character.train_xp(self.floor, logs)
+        self.times_trained[self.floor] += 1
+        self.character.gold -= cost
+      else:
+        logs.append("Not enough money to train XP")
+    elif choice_text == "Gain Stats":
+      cost = (self.character.stat_training_cost() * 
+              (self.times_trained[self.floor] + 1))
+      if cost <= self.character.gold:
+        self.pass_time(5, logs)
+        self.character.train_stats(logs)
+        self.times_trained[self.floor] += 1
+        self.character.gold -= cost
+      else:
+        logs.append("Not enough money to train stats")
+    elif choice_text == "Leave Shop":
+      self.leave_state()
 
   def apply_choice_armorer(self, logs, choice_text):
     if choice_text.startswith("Armor #"):
@@ -428,6 +489,84 @@ class GameState(object):
     return self.equipment_comparison_text(self.character.equipment[slot],
                                           equip)
 
+  def apply_reforge(self, item, logs):
+    cost = item.reforge_cost_gold(self.floor)
+    mat_cost = item.reforge_cost_materials(self.floor)
+    if (cost <= self.character.gold and
+        mat_cost <= self.character.materials[item.rarity]):
+      self.pass_time(3, logs)
+      self.character.gold -= cost
+      self.character.materials[item.rarity] -= mat_cost
+      old_item_string = str(item)
+      improvement = item.reforge(self.floor)
+      logs.append("Your %s was reforged (%s)" % (old_item_string, improvement))
+    else:
+      logs.append("You do not have sufficient payment")
+
+  def apply_choice_forge_armor(self, logs, choice_text):
+    item = None
+    if choice_text == "Reforge Helm":
+      item = self.character.equipment[1]
+    elif choice_text == "Reforge Chest":
+      item = self.character.equipment[2]
+    elif choice_text == "Reforge Legs":
+      item = self.character.equipment[3]
+    elif choice_text == "Never Mind":
+      self.change_state("FORGE")
+    if item:
+      self.apply_reforge(item, logs)
+
+  def apply_choice_forge(self, logs, choice_text):
+    item = None
+    if choice_text == "Reforge Weapon":
+      item = self.character.equipment[0]
+    elif choice_text == "Reforge Armor":
+      self.change_state("FORGE_ARMOR")
+    elif choice_text == "Leave Shop":
+      self.leave_state()
+    if item:
+      self.apply_reforge(item, logs)
+
+  def apply_enchantment(self, item, logs):
+    cost = item.enchant_cost_gold()
+    mat_cost = item.enchant_cost_materials()
+    if (cost <= self.character.gold and
+        mat_cost <= self.character.materials[item.rarity]):
+      self.pass_time(3, logs)
+      self.character.gold -= cost
+      self.character.materials[item.rarity] -= mat_cost
+      old_item_string = str(item)
+      enchantment = item.enchant()
+      logs.append("Your %s was enchanted (%s)" % (old_item_string, enchantment))
+    else:
+      logs.append("You do not have sufficient payment")
+
+  def apply_choice_enchanter(self, logs, choice_text):
+    item = None
+    if choice_text == "Enchant Weapon":
+      item = self.character.equipment[0]
+    elif choice_text == "Enchant Armor":
+      self.change_state("ENCHANT_ARMOR")
+    elif choice_text == "Enchant Accessory":
+      item = self.character.equipment[4]
+    elif choice_text == "Leave Shop":
+      self.leave_state()
+    if item:
+      self.apply_enchantment(item, logs)
+
+  def apply_choice_enchant_armor(self, logs, choice_text):
+    item = None
+    if choice_text == "Enchant Helm":
+      item = self.character.equipment[1]
+    elif choice_text == "Enchant Chest":
+      item = self.character.equipment[2]
+    elif choice_text == "Enchant Legs":
+      item = self.character.equipment[3]
+    elif choice_text == "Never Mind":
+      self.change_state("ENCHANTER")
+    if item:
+      self.apply_enchantment(item, logs)
+
   def apply_choice_outside(self, logs, choice_text):
     if choice_text == "Ascend Tower":
       self.pass_time(10, logs)
@@ -447,6 +586,9 @@ class GameState(object):
       self.pass_time(5, logs)
       self.change_state("TOWN")
       logs.append("Went to town")
+      if self.tower_lock[self.floor]:
+        self.tower_lock[self.floor] = False
+        logs.append("Ascend Tower unlocked")
     elif choice_text == "Descend Tower":
       self.pass_time(10, logs)
       if self.floor > 1:
@@ -469,8 +611,7 @@ class GameState(object):
     self.leave_state()
     self.handle_treasure(logs)
 
-  # TODO: Implement: ARMORER, ENCHANTER, ALCHEMIST, TRAINING,
-  #                  FORGE, TEMPLE, INN
+  # TODO: Implement: ALCHEMIST, TRAINING, FORGE, TEMPLE, INN
 
   def apply_choice(self, choice):
     """Apply the given action choice to this gamestate, modifying it."""
@@ -518,6 +659,67 @@ class GameState(object):
       pieces.append("You cleaned 'em out!")
     return "\n".join(pieces)
 
+  @staticmethod
+  def enchanter_shop_text(character):
+    pieces = []
+    weapon = character.equipment[0]
+    pieces.append("Enchant Weapon: %d gold and %d %s materials" %
+                  (weapon.enchant_cost_gold(), weapon.enchant_cost_materials(),
+                   RARITY[weapon.rarity]))
+    pieces.append("Enchant Armor: [submenu]")
+    acc = character.equipment[4]
+    pieces.append("Enchant Accessory: %d gold and %d %s materials" %
+                  (acc.enchant_cost_gold(), acc.enchant_cost_materials(),
+                   RARITY[acc.rarity]))
+    return "\n".join(pieces)
+
+  @staticmethod
+  def enchanter_shop_armor_text(character):
+    pieces = []
+    for name, slot in (("Helm", 1), ("Chest", 2), ("Legs", 3)):
+      item = character.equipment[slot]
+      cost = item.enchant_cost_gold()
+      material_cost = item.enchant_cost_materials()
+      pieces.append("Enchant %s: %d gold and %d %s materials" %
+                    (name, cost, material_cost, RARITY[item.rarity]))
+    return "\n".join(pieces)
+
+  @staticmethod
+  def forge_text(level, character):
+    pieces = []
+    weapon = character.equipment[0]
+    if weapon.reforgable(level):
+      pieces.append("Reforge Weapon: %d gold and %d %s materials" %
+                    (weapon.reforge_cost_gold(level),
+                     weapon.reforge_cost_materials(level),
+                     RARITY[weapon.rarity]))
+    pieces.append("Reforge Armor: [submenu]")
+    return "\n".join(pieces)
+
+  @staticmethod
+  def forge_armor_text(level, character):
+    pieces = []
+    for name, slot in (("Helm", 1), ("Chest", 2), ("Legs", 3)):
+      item = character.equipment[slot]
+      if item.reforgable(level):
+        cost = item.reforge_cost_gold(level)
+        material_cost = item.reforge_cost_materials(level)
+        pieces.append("Reforge %s: %d gold and %d %s materials" %
+                      (name, cost, material_cost, RARITY[item.rarity]))
+    return "\n".join(pieces)
+
+  # TODO: Messy that others are static and this is not?
+  def training_shop_text(self):
+    pieces = []
+    floor = self.floor   # Next lines are long
+    pieces.append("Gain XP: %d gold (%d xp)" % 
+                  (floor * ((self.times_trained[floor] + 1) ** 2) * 50,
+                   floor * 25))
+    pieces.append("Gain Stats: %d gold (+1 random stat)" %
+                  (self.character.stat_training_cost() *
+                  (self.times_trained[floor] + 1)))
+    return "\n".join(pieces)
+
   # TODO: This and get_choices should probably be done differently (with a dict
   #       for example
   def panel_text(self):
@@ -544,5 +746,15 @@ class GameState(object):
       return self.armor_shop_text(self.armor_shops[self.floor], "Armor")
     elif current_state == "WEAPONSMITH":
       return self.armor_shop_text(self.weapon_shops[self.floor], "Weapon")
+    elif current_state == "ENCHANTER":
+      return self.enchanter_shop_text(self.character)
+    elif current_state == "ENCHANT_ARMOR":
+      return self.enchanter_shop_armor_text(self.character)
+    elif current_state == "FORGE":
+      return self.forge_text(self.floor, self.character)
+    elif current_state == "FORGE_ARMOR":
+      return self.forge_armor_text(self.floor, self.character)
+    elif current_state == "TRAINING":
+      return self.training_shop_text()
     else:
       return "Error, no text for state %s" % current_state
