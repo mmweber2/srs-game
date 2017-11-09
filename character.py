@@ -21,9 +21,11 @@ class Character(object):
 
   def add_buff(self, new_buff):
     Buff.add_buff(self.buffs, new_buff)
+    self.recalculate_max_hp()
 
   def add_debuff(self, new_buff):
     Debuff.add_debuff(self.buffs, new_buff)
+    self.recalculate_max_hp()
 
   def pass_time(self, time_passed):
     remaining_buffs = []
@@ -32,6 +34,7 @@ class Character(object):
       if buff.active():
         remaining_buffs.append(buff)
     self.buffs = remaining_buffs
+    self.recalculate_max_hp()
 
     remaining_debuffs = []
     for debuff in self.debuffs:
@@ -39,7 +42,7 @@ class Character(object):
       if debuff.active():
         remaining_debuffs.append(debuff)
     self.debuffs = remaining_debuffs
-
+    self.recalculate_max_hp()
 
   def make_initial_equipment(self, choice):
     for i in range(len(self.equipment)):
