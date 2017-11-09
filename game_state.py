@@ -97,7 +97,6 @@ class GameState(object):
       shop_set = set()
       while len(shop_set) < 3:
         shop_set.add(random.choice(TOWN_BUILDINGS))
-      print shop_set
       shops = []
       for shop in shop_set:
         shops.append(shop(level))
@@ -415,7 +414,7 @@ class GameState(object):
       method = getattr(GameState, method_name)
       method(self, logs, choice_text)
     except AttributeError as exc:
-      print exc
+      print exc  # pylint: disable=print-statement
       logs.append("apply_choice not implemented yet, state: %s" % current_state)
       # Hack. TODO: remove
       if len(self.state) > 1:
