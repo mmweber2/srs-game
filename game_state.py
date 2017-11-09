@@ -14,8 +14,8 @@ TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
 TOWER_LEVELS = 100
 UPDATE_TIME = 360
 DEBUG_FLOOR = 1
-DEBUG_BUILDING = rooms.WeaponShop
-#DEBUG_BUILDING = None
+#DEBUG_BUILDING = rooms.Inn
+DEBUG_BUILDING = None
 
 # TODO: Add time costs to everything.
 #       When we do this, have a function that applies time so we can also
@@ -62,10 +62,10 @@ class GameState(object):
     # When you complete a quest on a level, you gain some faction for that level
     # and some for surrounding levels, decreasing cost of things?
     self.tower_faction = [0] * (TOWER_LEVELS + 1)
-    # This is to prevent quest/shop scumming
+    self.tower_update_ready = False
     self.tower_quests = self.generate_quests()
     # Number of encounters remaining in current tower ascension
-    # Could be battles or other things (finding treasure, finding a shop)
+    # TODO: Could be battles or other things (finding treasure, finding a shop)
     self.ascension_encounters = 0
     # Monster currently in combat with
     self.monster = None
@@ -73,8 +73,6 @@ class GameState(object):
     # When we defeat a monster, treasure goes here so we can handle it a piece
     # at a time
     self.treasure_queue = []
-    # TODO: This is starting to get a little unwieldy. Clean up?
-    #       There is probably a cleaner way to track all this shop state
     self.equipment_choice = None
     self.current_shop = None
 
@@ -106,7 +104,6 @@ class GameState(object):
     return tower
 
   def tower_update(self):
-    # TODO: Delay this update until in state "OUTSIDE", "TOWN", or "TOWER"?
     self.tower_quests = self.generate_quests()
     for level in xrange(1, 101):
       for shop in range(3):
@@ -120,9 +117,9 @@ class GameState(object):
     self.time_spent += amount
     new_period = self.time_spent / UPDATE_TIME
     if old_period != new_period:
-      self.tower_update()
-      # TODO: Better text?
-      logs.append("Tower has updated")
+      self.tower_update_ready = True
+      logs.append("Tower ready for update.")
+    self.character.pass_time(amount)
 
   def current_state(self):
     """Return the current state."""
@@ -188,6 +185,10 @@ class GameState(object):
   def state_change_checks(self):
     if self.current_state() == "TOWN":
       self.character.restore_hp()
+    if self.current_state() == "OUTSIDE" or self.current_state == "TOWN":
+      if self.tower_update_ready:
+        self.tower_update()
+        self.tower_update_ready = False
 
   def change_state(self, state):
     self.state.pop()

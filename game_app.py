@@ -181,7 +181,10 @@ class MainWindow(wx.Frame):
     self.status_bar.SetStatusText("GP: %d" % self.game_state.character.gold, 2)
     time_spent = self.game_state.time_spent
     time_left = self.game_state.time_to_refresh()
-    self.status_bar.SetStatusText("Time: %d (%d)" % (time_spent, time_left), 3)
+    update_ready = "*" if self.game_state.tower_update_ready else ""
+    self.status_bar.SetStatusText("Time: %d (%s%d)" % (time_spent, 
+                                                       update_ready,
+                                                       time_left), 3)
 
   def on_exit(self, evt):  # pylint: disable=unused-argument
     self.Close(True)

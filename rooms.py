@@ -1,4 +1,5 @@
 from equipment import Equipment, RARITY
+from effect import WellRested, Blessed
 
 class Room(object):
   NO_CHANGE = 0
@@ -54,7 +55,6 @@ class TrainingRoom(Room):
     return "\n".join(pieces)
 
   def apply_choice(self, choice_text, logs, character):
-    print choice_text
     if choice_text == "Gain XP":
       cost = self.xp_training_cost()
       if cost <= character.gold:
@@ -493,16 +493,72 @@ class Inn(Room):
   def get_name(cls):
     return "Inn"
 
+  def get_buttons(self, character):
+    return ["", "Rest", "Buy Food", "Leave Inn"]
+
+  def get_text(self, character):
+    pieces = []
+    pieces.append("Rest: (%dg + 30 time) Well Rested buff" % (self.level * 10))
+    pieces.append("Buy Food: Not implemented yet")
+    return "\n".join(pieces)
+
+  def apply_choice(self, choice_text, logs, character):
+    if choice_text == "Rest":
+      cost = 10 * self.level
+      if cost <= character.gold:
+        character.gold -= cost
+        character.add_buff(WellRested(510))
+        logs.append("You became well rested.")
+        return (30, Room.NO_CHANGE)
+      else:
+        logs.append("You do not have sufficient money")
+        return (0, Room.NO_CHANGE)
+    elif choice_text == "Buy Food":
+      logs.append("Not implemented yet")
+      return (0, Room.NO_CHANGE)
+    elif choice_text == "Leave Inn":
+      return (0, Room.LEAVE_ROOM)
+
+  def enter_shop(self):
+    pass
+
 class Temple(Room):
   @classmethod
   def get_name(cls):
     return "Temple"
 
+  def refresh(self):
+    pass
+
+  def get_buttons(self, character):
+    return ["", "Blessing", "Purify Rune", "Leave Temple"]
+
+  def get_text(self, character):
+    pieces = []
+    pieces.append("Blessing: (%dg) Blessed buff" % (self.level * 50))
+    pieces.append("Purify Rune: Not implemented yet")
+    return "\n".join(pieces)
+
+  def apply_choice(self, choice_text, logs, character):
+    if choice_text == "Blessing":
+      cost = 50 * self.level
+      if cost <= character.gold:
+        character.gold -= cost
+        character.add_buff(Blessed(241))
+        logs.append("You were blessed")
+        return (1, Room.NO_CHANGE)
+      else:
+        logs.append("You do not have sufficient money")
+        return (0, Room.NO_CHANGE)
+    elif choice_text == "Purify Rune":
+      logs.append("Not implemented yet")
+      return (0, Room.NO_CHANGE)
+    elif choice_text == "Leave Temple":
+      return (0, Room.LEAVE_ROOM)
+
+  def enter_shop(self):
+    pass
 """
     elif current_state == "ALCHEMIST":
       return ["Item 1", "Item 2", "Item 3", "Leave Shop"]
-    elif current_state == "TEMPLE":
-      return ["", "Blessing", "Purify Rune", "Leave Temple"]
-    elif current_state == "INN":
-      return ["", "Rest", "Buy Food", "Leave Inn"]
 """

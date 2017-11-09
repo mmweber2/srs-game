@@ -1,5 +1,6 @@
 import random
 from equipment import Equipment, RARITY
+from effect import Effect, Buff, Debuff
 
 class Character(object):
   def __init__(self):
@@ -16,6 +17,30 @@ class Character(object):
     self.level = 1
     self.exp = 0
     self.materials = [0] * len(RARITY)
+    self.buffs = []
+    self.debuffs = []
+
+  def add_buff(self, new_buff):
+    Buff.add_buff(self.buffs, new_buff)
+
+  def add_debuff(self, new_buff):
+    Debuff.add_debuff(self.buffs, new_buff)
+
+  def pass_time(self, time_passed):
+    remaining_buffs = []
+    for buff in self.buffs:
+      buff.pass_time(time_passed)
+      if buff.active():
+        remaining_buffs.append(buff)
+    self.buffs = remaining_buffs
+
+    remaining_debuffs = []
+    for debuff in self.debuffs:
+      debuff.pass_time(time_passed)
+      if debuff.active():
+        remaining_debuffs.append(debuff)
+    self.debuffs = remaining_debuffs
+
 
   def make_initial_equipment(self, choice):
     for i in range(len(self.equipment)):
@@ -35,12 +60,23 @@ class Character(object):
       pieces.append(str(piece) + "\n")
     pieces.append("Materials:\n")
     if sum(self.materials) == 0:
-      pieces.append("None")
+      pieces.append("None\n")
     else:
       # TODO: Use function in Equipment?
       for i in xrange(len(self.materials)):
         if self.materials[i] > 0:
           pieces.append("%s: %d  " % (RARITY[i], self.materials[i]))
+      pieces.append("\n")
+    pieces.append("Buffs:\n")
+    pieces.append(", ".join(str(buff) for buff in self.buffs))
+    if self.buffs:
+      pieces.append("\n")
+    pieces.append("Debuffs:\n")
+    pieces.append(", ".join(str(debuff) for debuff in self.debuffs))
+    if self.debuffs:
+      pieces.append("\n")
+    for debuff in self.debuffs:
+      pieces.append(str(debuff))
     pieces.append("\n")
     return "".join(pieces)
 
@@ -63,12 +99,16 @@ class Character(object):
     lost_gold = self.gold / 2
     logs.append("You lost %d gold" % lost_gold)
     self.gold -= lost_gold
+    self.buffs = []
+    self.debuffs = []
 
   def get_effective_stat(self, stat):
     value = self.stats[stat]
     for piece in self.equipment:
       if piece:
         value += piece.get_stat_value(stat)
+    effect = Effect.get_combined_impact(stat, self.buffs, self.debuffs)
+    value = int(value * effect)
     return value
 
   def equip(self, item):
@@ -118,8 +158,11 @@ class Character(object):
     level_difference = encounter_level - self.level
     if level_adjust:
       exp_gained = int(exp_gained * (1.1 ** level_difference))
-    self.exp += exp_gained
-    logs.append("You have gained %d XP" % exp_gained)
+    xp_buff = Effect.get_combined_impact("XP Gain", self.buffs, self.debuffs)
+    total_xp_gain = int(exp_gained * xp_buff)
+    self.exp += total_xp_gain
+    added_xp = total_xp_gain - exp_gained
+    logs.append("You have gained %d XP (%+d buffs)" % (exp_gained, added_xp))
     while self.exp >= self.next_level_exp():
       self.exp -= self.next_level_exp()
       self.level += 1
