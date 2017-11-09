@@ -5,14 +5,13 @@ from effect import Effect, Buff, Debuff
 class Character(object):
   def __init__(self):
     # Weapon, Helm, Chest, Legs, Accessory
-    # TODO: Implement wand vs. sword weapons
     self.equipment = [None, None, None, None, None]
     self.stats = {"Strength": 20, "Stamina": 20, "Defense": 20, "Speed": 20,
                   "Intellect": 20, "Magic Defense": 20}
     self.gold = 100
     self.name = "Hero?"
-    # TODO: Have separate HP that stamina adds to?
-    self.max_hp = 5 * self.stats["Stamina"]
+    self.base_hp = 20
+    self.max_hp = 5 * self.stats["Stamina"] + self.base_hp
     self.current_hp = self.max_hp
     self.level = 1
     self.exp = 0
@@ -115,12 +114,7 @@ class Character(object):
     slot = item.slot
     removed = self.equipment[slot]
     self.equipment[slot] = item
-    # TODO: Separate function?
-    new_max_hp = self.get_effective_stat("Stamina") * 5
-    difference = new_max_hp - self.max_hp
-    self.current_hp += max(0, difference)  # Don't lose HP for equipping
-    self.max_hp = new_max_hp
-    self.current_hp = min(self.current_hp, self.max_hp)  # Unless max_hp drops
+    self.recalculate_max_hp()
     return removed
 
   def get_damage(self):
@@ -134,12 +128,23 @@ class Character(object):
     # TODO: Something more "complex", lol
     return self.level * 100
 
+  def recalculate_max_hp(self):
+    new_max_hp = self.get_effective_stat("Stamina") * 5 + self.base_hp
+    difference = new_max_hp - self.max_hp
+    self.current_hp += max(0, difference)  # Don't lose HP for equipping
+    self.max_hp = new_max_hp
+    self.current_hp = min(self.current_hp, self.max_hp)  # Unless max_hp drops
+
   def level_up(self, logs):
     for stat in self.stats:
       increase = random.randint(1, 3)
       if increase > 0:
         self.stats[stat] += increase
         logs.append("You have gained %d %s" % (increase, stat))
+    hp_gain = random.randint(10, 20)
+    self.base_hp += hp_gain
+    logs.append("You have gained %d HP" % hp_gain)
+    self.recalculate_max_hp()
 
   def train_xp(self, level, logs):
     self.gain_exp(level * 25, level, logs, level_adjust=False)
