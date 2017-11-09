@@ -182,7 +182,7 @@ class MainWindow(wx.Frame):
     time_spent = self.game_state.time_spent
     time_left = self.game_state.time_to_refresh()
     update_ready = "*" if self.game_state.tower_update_ready else ""
-    self.status_bar.SetStatusText("Time: %d (%s%d)" % (time_spent, 
+    self.status_bar.SetStatusText("Time: %d (%s%d)" % (time_spent,
                                                        update_ready,
                                                        time_left), 3)
 

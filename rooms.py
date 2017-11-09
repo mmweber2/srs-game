@@ -7,6 +7,7 @@ class Room(object):
 
   def __init__(self, level):
     self.level = level
+    self.faction_rate = 1.0
 
   def refresh(self):
     pass
@@ -24,7 +25,8 @@ class Room(object):
   def apply_choice(self, choice_text, logs, character):
     return (0, Room.LEAVE_ROOM)
 
-  def enter_shop(self):
+  def enter_shop(self, faction_rate):
+    self.faction_rate = faction_rate
     pass
 
 class TrainingRoom(Room):
@@ -41,10 +43,12 @@ class TrainingRoom(Room):
     return ["", "Gain XP", "Gain Stats", "Leave Shop"]
 
   def stat_training_cost(self, character):
-    return sum(character.stats.values()) * (self.train_count + 1)
+    return int(sum(character.stats.values()) * (self.train_count + 1) *
+               self.faction_rate)
 
   def xp_training_cost(self):
-    return self.level * ((self.train_count + 1) ** 2) * 50
+    return int(self.level * ((self.train_count + 1) ** 2) * 50 *
+               self.faction_rate)
 
   def get_text(self, character):
     pieces = []
@@ -96,10 +100,9 @@ class Enchanter(Room):
       return ["Enchant Weapon", "Enchant Armor", "Enchant Accessory",
               "Leave Shop"]
 
-  # TODO: If we make an Enchanter shop class, these should probably move there.
-  @classmethod
-  def enchant_cost_gold(cls, item):
-    return item.item_level * 25 * ((item.enchant_count + 1) ** 2)
+  def enchant_cost_gold(self, item):
+    return int(item.item_level * 25 * ((item.enchant_count + 1) ** 2) *
+               self.faction_rate)
 
   @classmethod
   def enchant_cost_materials(cls, item):
@@ -187,8 +190,9 @@ class Enchanter(Room):
     else:
       return self.apply_choice_enchanter(choice_text, logs, character)
 
-  def enter_shop(self):
+  def enter_shop(self, faction_rate):
     self.enchanting_armor = False
+    self.faction_rate = faction_rate
 
 class Forge(Room):
   def __init__(self, level):
@@ -221,7 +225,8 @@ class Forge(Room):
 
   def reforge_cost_gold(self, item):
     level = item.item_level
-    return (self.level - level) * (25 * ((item.reforge_count + 1) ** 2))
+    return int((self.level - level) * (25 * ((item.reforge_count + 1) ** 2))
+               * self.faction_rate)
 
   def reforge_cost_materials(self, item):
     return (self.level - item.item_level) * (item.reforge_count + 1)
@@ -298,8 +303,9 @@ class Forge(Room):
       return self.apply_reforge(item, character, logs)
     assert False
 
-  def enter_shop(self):
+  def enter_shop(self, faction_rate):
     self.forging_armor = False
+    self.faction_rate = faction_rate
 
 class ArmorShop(Room):
   def __init__(self, level):
@@ -335,6 +341,9 @@ class ArmorShop(Room):
       choices.append("Leave Shop")
       return choices
 
+  def get_cost(self, item):
+    return int(item.get_value() * self.faction_rate)
+
   def get_text(self, character):
     if self.buying:
       equip = self.inventory[self.shop_choice]
@@ -345,7 +354,7 @@ class ArmorShop(Room):
       pieces = []
       for i, item in enumerate(self.inventory):
         if item is not None:
-          pieces.append("Armor #%d  (%d gold)" % (i + 1, item.get_value()))
+          pieces.append("Armor #%d  (%d gold)" % (i + 1, self.get_cost(item)))
           pieces.append(str(item))
       if not pieces:
         pieces.append("You cleaned 'em out!")
@@ -357,7 +366,7 @@ class ArmorShop(Room):
       return (0, Room.NO_CHANGE)
     elif choice_text == "Buy":
       equipment = self.inventory[self.shop_choice]
-      value = equipment.get_value()
+      value = self.get_cost(equipment)
       if character.gold >= value:
         character.gold -= value
         recycle = character.equip(equipment)
@@ -388,9 +397,10 @@ class ArmorShop(Room):
     elif choice_text == "Leave Shop":
       return (0, Room.LEAVE_ROOM)
 
-  def enter_shop(self):
+  def enter_shop(self, faction_rate):
     self.buying = False
     self.shop_choice = None
+    self.faction_rate = faction_rate
 
 # TODO: There is a lot of duplication between this and ArmorShop. Clean it up.
 #       Like really, whole functions
@@ -426,6 +436,9 @@ class WeaponShop(Room):
       choices.append("Leave Shop")
       return choices
 
+  def get_cost(self, item):
+    return int(item.get_value() * self.faction_rate)
+
   def get_text(self, character):
     if self.buying:
       equip = self.inventory[self.shop_choice]
@@ -436,7 +449,7 @@ class WeaponShop(Room):
       pieces = []
       for i, item in enumerate(self.inventory):
         if item is not None:
-          pieces.append("Weapon #%d  (%d gold)" % (i + 1, item.get_value()))
+          pieces.append("Weapon #%d  (%d gold)" % (i + 1, self.get_cost(item)))
           pieces.append(str(item))
       if not pieces:
         pieces.append("You cleaned 'em out!")
@@ -448,7 +461,7 @@ class WeaponShop(Room):
       return (0, Room.NO_CHANGE)
     elif choice_text == "Buy":
       equipment = self.inventory[self.shop_choice]
-      value = equipment.get_value()
+      value = self.get_cost(equipment)
       if character.gold >= value:
         character.gold -= value
         recycle = character.equip(equipment)
@@ -479,9 +492,10 @@ class WeaponShop(Room):
     elif choice_text == "Leave Shop":
       return (0, Room.LEAVE_ROOM)
 
-  def enter_shop(self):
+  def enter_shop(self, faction_rate):
     self.buying = False
     self.shop_choice = None
+    self.faction_rate = faction_rate
 
 class Alchemist(Room):
   @classmethod
@@ -496,15 +510,19 @@ class Inn(Room):
   def get_buttons(self, character):
     return ["", "Rest", "Buy Food", "Leave Inn"]
 
+  def get_rest_cost(self):
+    return int(self.level * 10 * self.faction_rate)
+
   def get_text(self, character):
     pieces = []
-    pieces.append("Rest: (%dg + 30 time) Well Rested buff" % (self.level * 10))
+    pieces.append("Rest: (%dg + 30 time) Well Rested buff" %
+                  self.get_rest_cost())
     pieces.append("Buy Food: Not implemented yet")
     return "\n".join(pieces)
 
   def apply_choice(self, choice_text, logs, character):
     if choice_text == "Rest":
-      cost = 10 * self.level
+      cost = self.get_rest_cost()
       if cost <= character.gold:
         character.gold -= cost
         character.add_buff(WellRested(510))
@@ -519,8 +537,8 @@ class Inn(Room):
     elif choice_text == "Leave Inn":
       return (0, Room.LEAVE_ROOM)
 
-  def enter_shop(self):
-    pass
+  def enter_shop(self, faction_rate):
+    self.faction_rate = faction_rate
 
 class Temple(Room):
   @classmethod
@@ -535,13 +553,16 @@ class Temple(Room):
 
   def get_text(self, character):
     pieces = []
-    pieces.append("Blessing: (%dg) Blessed buff" % (self.level * 50))
+    pieces.append("Blessing: (%dg) Blessed buff" % (self.get_blessing_cost()))
     pieces.append("Purify Rune: Not implemented yet")
     return "\n".join(pieces)
 
+  def get_blessing_cost(self):
+    return int(50 * self.level * self.faction_rate)
+
   def apply_choice(self, choice_text, logs, character):
     if choice_text == "Blessing":
-      cost = 50 * self.level
+      cost = self.get_blessing_cost()
       if cost <= character.gold:
         character.gold -= cost
         character.add_buff(Blessed(241))
@@ -556,8 +577,8 @@ class Temple(Room):
     elif choice_text == "Leave Temple":
       return (0, Room.LEAVE_ROOM)
 
-  def enter_shop(self):
-    pass
+  def enter_shop(self, faction_rate):
+    self.faction_rate = faction_rate
 """
     elif current_state == "ALCHEMIST":
       return ["Item 1", "Item 2", "Item 3", "Leave Shop"]

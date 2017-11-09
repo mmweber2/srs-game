@@ -17,23 +17,10 @@ DEBUG_FLOOR = 1
 #DEBUG_BUILDING = rooms.Inn
 DEBUG_BUILDING = None
 
-# TODO: Add time costs to everything.
-#       When we do this, have a function that applies time so we can also
-#       check for day change stuff, like quests changing or shop inventory
-#       changing
-
 # TODO: It is probably not best to be passing logs around to everything?
 #       it could be part of the GameState, or we could use a logger for real
 
-# TODO: Probably shops should be objects that track their own state and
-#       can return text and so forth, instead of this game_state kludge
-#       "Floor" can be part of that object, so maybe in the tower you find
-#       a shop that is more powerful than you "should"
-
 # TODO: Reforging is too cheap. Probably 25 * (new_level) * (level_difference)?
-
-# BUG: If you rest (and possibly just fight?) in a quest, and the tower resets,
-#      the quest resets. Actually, the quest display is wrong, it seems like
 
 # TODO: Need a place to buy accessories? Maybe?
 
@@ -61,7 +48,7 @@ class GameState(object):
     # TODO:
     # When you complete a quest on a level, you gain some faction for that level
     # and some for surrounding levels, decreasing cost of things?
-    self.tower_faction = [0] * (TOWER_LEVELS + 1)
+    self.tower_faction = [1.0] * (TOWER_LEVELS + 1)
     self.tower_update_ready = False
     self.tower_quests = self.generate_quests()
     # Number of encounters remaining in current tower ascension
@@ -124,6 +111,14 @@ class GameState(object):
   def current_state(self):
     """Return the current state."""
     return self.state[-1]
+
+  def faction_update(self, base_floor):
+    for floor in xrange(max(1, base_floor - 4),
+                        min(base_floor + 4, TOWER_LEVELS) + 1):
+      difference = abs(floor - base_floor)
+      multiplier = .95 + (.01 * difference)
+      assert .94 < multiplier < 1.0
+      self.tower_faction[floor] *= multiplier
 
   # TODO: Clean this up. While some of them require logic, a lot of them do not,
   #       so we could move those to a dictionary, and leave only the ones that
@@ -253,9 +248,15 @@ class GameState(object):
       self.character.gain_exp(self.quest.xp_reward, self.floor, logs,
                               level_adjust=False)
       self.treasure_queue = self.quest.get_treasure()
+      self.faction_update(self.floor)
+      # Fixes a bug when the tower update is pending
+      regenerate_quest = self.tower_update_ready
       self.leave_state()
       if self.current_state() == "OUTSIDE":
-        self.tower_quests[self.floor] = None
+        if regenerate_quest:
+          self.tower_quests[self.floor] = Quest(self.floor)
+        else:
+          self.tower_quests[self.floor] = None
       self.handle_treasure(logs)
 
   def apply_choice_tower(self, logs, choice_text):
@@ -347,6 +348,7 @@ class GameState(object):
         self.pass_time(3, logs)
         logs.append("Went to the %s" % shop.get_name())
         self.add_state("SHOP")
+        shop.enter_shop(self.tower_faction[self.floor])
 
   def apply_choice_shop(self, logs, choice_text):
     time_cost, result = self.current_shop.apply_choice(choice_text, logs,
