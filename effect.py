@@ -9,7 +9,6 @@ class Effect(object):
 
   def pass_time(self, time_passed):
     self.duration -= time_passed
-  pass
 
   @classmethod
   def stackable(cls):
