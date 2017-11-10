@@ -4,6 +4,8 @@ from equipment import Equipment
 # TODO: Should Monster and Character subclass from something?
 NORMAL_CHANCES = [0.0, 0.2, 0.04, 0.008, 0.00016]
 BOSS_CHANCES = [0.0, 0.4, 0.16, 0.064, 0.0256]
+RUNE_CHANCE = 0.002
+BOSS_RUNE_CHANCE = 0.01
 
 class Monster(object):
   def __init__(self, level, boss):
@@ -75,6 +77,9 @@ class Monster(object):
     for rarity in range(1, len(chances)):
       while random.random() < chances[rarity]:
         treasure.append(Equipment.get_new_armor(self.level, rarity=rarity))
+    rune_chance = BOSS_RUNE_CHANCE if self.boss else RUNE_CHANCE
+    while random.random() < rune_chance:
+      treasure.append("Rune")
     return treasure
 
   def get_effective_stat(self, stat):

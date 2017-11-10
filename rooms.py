@@ -1,7 +1,7 @@
+import random
 from equipment import Equipment, RARITY
 from effect import WellRested, Blessed
 import items
-import random
 
 class Room(object):
   NO_CHANGE = 0
@@ -30,7 +30,6 @@ class Room(object):
 
   def enter_shop(self, faction_rate):
     self.faction_rate = faction_rate
-    pass
 
 class TrainingRoom(Room):
   def __init__(self, level):
@@ -228,7 +227,8 @@ class Forge(Room):
 
   def reforge_cost_gold(self, item):
     level = item.item_level
-    return int((self.level - level) * (25 * ((item.reforge_count + 1) ** 2))
+    return int((self.level - level)
+               * ((25 * level) * ((item.reforge_count + 1) ** 2))
                * self.faction_rate)
 
   def reforge_cost_materials(self, item):
@@ -500,11 +500,6 @@ class WeaponShop(Room):
     self.shop_choice = None
     self.faction_rate = faction_rate
 
-class Alchemist(Room):
-  @classmethod
-  def get_name(cls):
-    return "Alchemist"
-
 class Inn(Room):
   @classmethod
   def get_name(cls):
@@ -516,11 +511,14 @@ class Inn(Room):
   def get_rest_cost(self):
     return int(self.level * 10 * self.faction_rate)
 
+  def get_food_cost(self):
+    return int(self.level * 10 * self.faction_rate)
+
   def get_text(self, character):
     pieces = []
     pieces.append("Rest: (%dg + 30 time) Well Rested buff" %
                   self.get_rest_cost())
-    pieces.append("Buy Food: Not implemented yet")
+    pieces.append("Buy Food: %d gold" % self.get_food_cost())
     return "\n".join(pieces)
 
   def apply_choice(self, choice_text, logs, character):
@@ -534,9 +532,21 @@ class Inn(Room):
       else:
         logs.append("You do not have sufficient money")
         return (0, Room.NO_CHANGE)
+    # TODO: There's a lot of very similar "buying things" code to consolidate
     elif choice_text == "Buy Food":
-      logs.append("Not implemented yet")
-      return (0, Room.NO_CHANGE)
+      if character.gold >= self.get_food_cost():
+        item = items.InnFood()
+        result = character.add_item(item)
+        if result:
+          character.gold -= self.get_food_cost()
+          logs.append("You purchase the %s" % item.get_name())
+          return (1, Room.NO_CHANGE)
+        else:
+          logs.append("Your inventory is full!")
+          return (0, Room.USE_ITEM)
+      else:
+        logs.append("You do not have enough gold to buy that.")
+        return (0, Room.NO_CHANGE)
     elif choice_text == "Leave Inn":
       return (0, Room.LEAVE_ROOM)
 
@@ -597,9 +607,9 @@ class Alchemist(Room):
 
   def generate_inventory(self):
     inventory = []
-    for i in range(3):
-      items = [x() for x in self.possible_items]
-      inventory.append(max((self.item_rate(item), item) for item in items)[1])
+    for _ in range(3):
+      pot = [x() for x in self.possible_items]   # Shouldn't redefine item
+      inventory.append(max((self.item_rate(pot), pot) for pot in pot)[1])
     return inventory
 
   def refresh(self):
@@ -656,4 +666,3 @@ class Alchemist(Room):
 
   def enter_shop(self, faction_rate):
     self.faction_rate = faction_rate
-    pass

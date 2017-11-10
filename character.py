@@ -22,6 +22,7 @@ class Character(object):
     self.materials = [0] * len(RARITY)
     self.buffs = []
     self.debuffs = []
+    self.runes = 0
 
   def add_item(self, item):
     if len(self.items) >= 3:
@@ -104,6 +105,7 @@ class Character(object):
       pieces.append("\n")
     else:
       pieces.append("None\n")
+    pieces.append("Corrupted runes: %d" % self.runes)
     return "".join(pieces)
 
   def restore_hp(self, amount=None):

@@ -15,9 +15,10 @@ TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
 TOWER_LEVELS = 100
 UPDATE_TIME = 360
 DEBUG_FLOOR = 1
-#DEBUG_BUILDING = None
-DEBUG_BUILDING = rooms.Alchemist
-DEBUG_GOLD = 1000
+DEBUG_BUILDING = None
+#DEBUG_BUILDING = rooms.Inn
+#DEBUG_GOLD = 1000
+DEBUG_GOLD = None
 
 # TODO: It is probably not best to be passing logs around to everything?
 #       it could be part of the GameState, or we could use a logger for real
@@ -27,6 +28,8 @@ DEBUG_GOLD = 1000
 # TODO: Need a place to buy accessories? Maybe?
 
 # TODO: Add top floor state
+
+# START HERE: Add corrupted rune running into the game. (Start in rooms.Temple)
 
 class GameState(object):
   """
@@ -90,7 +93,7 @@ class GameState(object):
       for shop in shop_set:
         shops.append(shop(level))
       tower.append(shops)
-    if DEBUG_BUILDING:
+    if DEBUG_BUILDING:  # pylint: disable=not-callable
       tower[DEBUG_FLOOR][0] = DEBUG_BUILDING(DEBUG_FLOOR)
     return tower
 
@@ -182,6 +185,9 @@ class GameState(object):
         self.add_state("LOOT_EQUIPMENT")
         self.equipment_choice = item
         break  # Have to give choice to player
+      elif item == "Rune":
+        logs.append("You found a corrupted rune.")
+        self.character.runes += 1
       else:
         assert False
 
@@ -236,8 +242,9 @@ class GameState(object):
   def apply_choice_use_item(self, logs, choice_text):
     if choice_text.startswith("Use Item #"):
       self.pass_time(0, logs)
-      choice = int(choice_text[-1]) - 1
+      choice = int(choice_text[-1])
       assert choice > 0
+      choice -= 1
       item = self.character.items.pop(choice)
       result = item.apply(self.character, self.monster, logs)
       if result == Item.UNUSABLE:
@@ -248,7 +255,7 @@ class GameState(object):
     elif choice_text == "Never Mind":
       self.pass_time(0, logs)
       self.leave_state()
-      
+
   def apply_choice_quest(self, logs, choice_text):
     if choice_text == "Continue Quest":
       self.pass_time(random.randint(1, 3), logs)

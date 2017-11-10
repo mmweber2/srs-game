@@ -88,6 +88,25 @@ class WellRested(Buff):
     else:
       return False
 
+class WellFed(Buff):
+  # +10% xp, +5% stats
+  def get_impacts(self):
+    impacts = {}
+    impacts["XP Gain"] = 1.10
+    for stat in STATS:
+      impacts[stat] = 1.05
+    return impacts
+
+  def get_name(self):
+    return "Well Fed"
+
+  def update(self, buff):
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      return True
+    else:
+      return False
+
 class Blessed(Buff):
   # +10% stats and defenses
   def get_impacts(self):
