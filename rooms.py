@@ -1,9 +1,12 @@
 from equipment import Equipment, RARITY
 from effect import WellRested, Blessed
+import items
+import random
 
 class Room(object):
   NO_CHANGE = 0
   LEAVE_ROOM = 1
+  USE_ITEM = 2
 
   def __init__(self, level):
     self.level = level
@@ -579,7 +582,78 @@ class Temple(Room):
 
   def enter_shop(self, faction_rate):
     self.faction_rate = faction_rate
-"""
-    elif current_state == "ALCHEMIST":
-      return ["Item 1", "Item 2", "Item 3", "Leave Shop"]
-"""
+
+class Alchemist(Room):
+  def __init__(self, level):
+    self.level = level
+    self.faction_rate = 1.0
+    self.possible_items = [items.MinorHealthPotion, items.MajorHealthPotion,
+                           items.HealthPotion, items.SuperHealthPotion]
+    self.inventory = self.generate_inventory()
+
+  def item_rate(self, item):
+    """Returns a number representing how much it should appear in the shop."""
+    return random.random() / (abs(self.level - item.get_item_level()) + 1)
+
+  def generate_inventory(self):
+    inventory = []
+    for i in range(3):
+      items = [x() for x in self.possible_items]
+      inventory.append(max((self.item_rate(item), item) for item in items)[1])
+    return inventory
+
+  def refresh(self):
+    self.inventory = self.generate_inventory()
+
+  @classmethod
+  def get_name(cls):
+    return "Alchemist"
+
+  def get_buttons(self, character):
+    choices = []
+    for i, item in enumerate(self.inventory):
+      if item:
+        choices.append("Choice #%d" % (i + 1))
+      else:
+        choices.append("")
+    choices.append("Leave Shop")
+    return choices
+
+  def get_cost(self, item):
+    return int(item.get_value() * self.faction_rate)
+
+  def get_text(self, character):
+    pieces = []
+    for i, item in enumerate(self.inventory):
+      if item:
+        pieces.append("Choice #%d: %s (%d gold)" % (i, item.get_name(),
+                                                    self.get_cost(item)))
+      else:
+        pieces.append("")
+    return "\n".join(pieces)
+
+  def apply_choice(self, choice_text, logs, character):
+    # TODO: Fix this (Choice #0, etc)
+    if choice_text.startswith("Choice #"):
+      choice = int(choice_text[-1]) - 1
+      item = self.inventory[choice]
+      if character.gold >= self.get_cost(item):
+        result = character.add_item(item)
+        if result:
+          character.gold -= self.get_cost(item)
+          logs.append("You purchase a %s" % item.get_name())
+          self.inventory[choice] = None
+          return (1, Room.NO_CHANGE)
+        else:
+          logs.append("Your inventory is full!")
+          return (0, Room.USE_ITEM)
+      else:
+        logs.append("You do not have enough gold to buy that.")
+        return (0, Room.NO_CHANGE)
+    elif choice_text == "Leave Shop":
+      return (0, Room.LEAVE_ROOM)
+    assert False
+
+  def enter_shop(self, faction_rate):
+    self.faction_rate = faction_rate
+    pass

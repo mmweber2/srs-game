@@ -6,6 +6,7 @@ from combat import Combat
 from equipment import Equipment
 from quest import Quest
 import rooms
+from items import Item
 
 TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                   rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
@@ -14,8 +15,9 @@ TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
 TOWER_LEVELS = 100
 UPDATE_TIME = 360
 DEBUG_FLOOR = 1
-#DEBUG_BUILDING = rooms.Inn
-DEBUG_BUILDING = None
+#DEBUG_BUILDING = None
+DEBUG_BUILDING = rooms.Alchemist
+DEBUG_GOLD = 1000
 
 # TODO: It is probably not best to be passing logs around to everything?
 #       it could be part of the GameState, or we could use a logger for real
@@ -38,6 +40,8 @@ class GameState(object):
   def __init__(self):
     self.state = ["CHAR_CREATE"]
     self.character = Character()
+    if DEBUG_GOLD:
+      self.character.gold = DEBUG_GOLD
     self.floor = 1
     self.frontier = 1
     self.time_spent = 0
@@ -153,6 +157,14 @@ class GameState(object):
         return ["Complete Quest", "", "", "Leave Quest"]
       else:
         return ["Continue Quest", "Rest", "Item", "Leave Quest"]
+    elif current_state == "USE_ITEM":
+      choices = []
+      for i in range(len(self.character.items)):
+        choices.append("Use Item #%d" % (i + 1))
+      while len(choices) < 3:
+        choices.insert(0, "")
+      choices.append("Never Mind")
+      return choices
     else:
       return ["Error", "Error", "Error", "Error"]
 
@@ -221,6 +233,22 @@ class GameState(object):
       self.leave_state()
       logs.append("You decline the quest.")
 
+  def apply_choice_use_item(self, logs, choice_text):
+    if choice_text.startswith("Use Item #"):
+      self.pass_time(0, logs)
+      choice = int(choice_text[-1]) - 1
+      assert choice > 0
+      item = self.character.items.pop(choice)
+      result = item.apply(self.character, self.monster, logs)
+      if result == Item.UNUSABLE:
+        logs.append("That item cannot be used right now.")
+        self.character.items.append(item)
+      else:
+        self.leave_state()
+    elif choice_text == "Never Mind":
+      self.pass_time(0, logs)
+      self.leave_state()
+      
   def apply_choice_quest(self, logs, choice_text):
     if choice_text == "Continue Quest":
       self.pass_time(random.randint(1, 3), logs)
@@ -236,8 +264,8 @@ class GameState(object):
       hp_gained = self.character.rest()
       logs.append("You regain %d HP" % hp_gained)
     elif choice_text == "Item":
-      self.pass_time(1, logs)
-      logs.append("Not implemented yet")
+      self.pass_time(0, logs)
+      self.add_state("USE_ITEM")
     elif choice_text == "Leave Quest":
       self.pass_time(1, logs)
       self.leave_state()
@@ -281,8 +309,8 @@ class GameState(object):
       if random.random() < .2:
         self.start_combat(logs, False)
     elif choice_text == "Item":
-      self.pass_time(1, logs)
-      logs.append("Not implemented yet")
+      self.pass_time(0, logs)
+      self.add_state("USE_ITEM")
     elif choice_text == "Leave Tower":
       self.pass_time(10, logs)
       self.change_state("OUTSIDE")
@@ -319,7 +347,8 @@ class GameState(object):
       self.pass_time(1, logs)
       logs.append("Not implemented yet")
     elif choice_text == "Item":
-      logs.append("Not implemented yet")
+      self.pass_time(0, logs)
+      self.add_state("USE_ITEM")
     elif choice_text == "Escape":
       self.pass_time(1, logs)
       logs.append("You attempt to escape...")
@@ -358,6 +387,8 @@ class GameState(object):
       self.leave_state()
     elif result == self.current_shop.NO_CHANGE:
       pass
+    elif result == self.current_shop.USE_ITEM:
+      self.add_state("USE_ITEM")
     else:
       assert False
 
@@ -429,6 +460,12 @@ class GameState(object):
     return Equipment.equipment_comparison_text(self.character.equipment[slot],
                                                self.equipment_choice)
 
+  def use_item_text(self):
+    pieces = []
+    for i, item in enumerate(self.character.items):
+      pieces.append("Use Item #%d: %s" % (i + 1, item.get_name()))
+    return "\n".join(pieces)
+
   # TODO: This and get_choices should probably be done differently (with a dict
   #       for example
   def panel_text(self):
@@ -451,5 +488,8 @@ class GameState(object):
       return str(self.tower_quests[self.floor])
     elif current_state == "SHOP":
       return self.current_shop.get_text(self.character)
+    elif current_state == "USE_ITEM":
+      return self.use_item_text()
+
     else:
       return "Error, no text for state %s" % current_state

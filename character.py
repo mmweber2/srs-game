@@ -2,10 +2,14 @@ import random
 from equipment import Equipment, RARITY
 from effect import Effect, Buff, Debuff
 
+STAT_ORDER = ["Strength", "Intellect", "Speed", "Stamina", "Defense",
+              "Magic Defense"]
+
 class Character(object):
   def __init__(self):
     # Weapon, Helm, Chest, Legs, Accessory
     self.equipment = [None, None, None, None, None]
+    self.items = []
     self.stats = {"Strength": 20, "Stamina": 20, "Defense": 20, "Speed": 20,
                   "Intellect": 20, "Magic Defense": 20}
     self.gold = 100
@@ -18,6 +22,16 @@ class Character(object):
     self.materials = [0] * len(RARITY)
     self.buffs = []
     self.debuffs = []
+
+  def add_item(self, item):
+    if len(self.items) >= 3:
+      return False
+    self.items.append(item)
+    return True
+
+  def use_item(self, index, monster, logs):
+    item = self.items.pop(index)
+    item.apply(self, monster, logs)
 
   def add_buff(self, new_buff):
     Buff.add_buff(self.buffs, new_buff)
@@ -52,15 +66,16 @@ class Character(object):
     pieces = []
     pieces.append("Character:\n")
     pieces.append("HP: %d / %d\n" % (self.current_hp, self.max_hp))
-    pieces.append("Level: %d\n" % self.level)
-    pieces.append("XP: %d / %d\n" % (self.exp, self.next_level_exp()))
-    for stat in self.stats:
-      pieces.append("%s: %d (%d)\n" % (stat, self.get_effective_stat(stat),
+    pieces.append("Level: %d " % self.level)
+    pieces.append("(%d / %d)\n" % (self.exp, self.next_level_exp()))
+    for stat in STAT_ORDER:
+      pieces.append("%s: %d (%d)  " % (stat, self.get_effective_stat(stat),
                                        self.stats[stat]))
+    pieces.append("\n")
     pieces.append("Equipment:\n")
     for piece in self.equipment:
       pieces.append(str(piece) + "\n")
-    pieces.append("Materials:\n")
+    pieces.append("Materials: ")
     if sum(self.materials) == 0:
       pieces.append("None\n")
     else:
@@ -69,17 +84,26 @@ class Character(object):
         if self.materials[i] > 0:
           pieces.append("%s: %d  " % (RARITY[i], self.materials[i]))
       pieces.append("\n")
-    pieces.append("Buffs:\n")
+    pieces.append("Buffs: ")
     pieces.append(", ".join(str(buff) for buff in self.buffs))
     if self.buffs:
       pieces.append("\n")
-    pieces.append("Debuffs:\n")
+    else:
+      pieces.append("None\n")
+    pieces.append("Debuffs: ")
     pieces.append(", ".join(str(debuff) for debuff in self.debuffs))
     if self.debuffs:
       pieces.append("\n")
+    else:
+      pieces.append("None\n")
     for debuff in self.debuffs:
       pieces.append(str(debuff))
-    pieces.append("\n")
+    pieces.append("Items: ")
+    if self.items:
+      pieces.append(", ".join(item.get_name() for item in self.items))
+      pieces.append("\n")
+    else:
+      pieces.append("None\n")
     return "".join(pieces)
 
   def restore_hp(self, amount=None):
