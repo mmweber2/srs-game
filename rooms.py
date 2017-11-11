@@ -7,6 +7,8 @@ class Room(object):
   NO_CHANGE = 0
   LEAVE_ROOM = 1
   USE_ITEM = 2
+  PURIFY_RUNE = 3
+  ENTER_DUNGEON = 4
 
   def __init__(self, level):
     self.level = level
@@ -585,8 +587,12 @@ class Temple(Room):
         logs.append("You do not have sufficient money")
         return (0, Room.NO_CHANGE)
     elif choice_text == "Purify Rune":
-      logs.append("Not implemented yet")
-      return (0, Room.NO_CHANGE)
+      if character.runes <= 0:
+        logs.append("You don't have any corrupted runes.")
+        return (0, Room.NO_CHANGE)
+      else:
+        logs.append("The priest sends you into the world of the rune...")
+        return (0, Room.PURIFY_RUNE)
     elif choice_text == "Leave Temple":
       return (0, Room.LEAVE_ROOM)
 
@@ -666,3 +672,21 @@ class Alchemist(Room):
 
   def enter_shop(self, faction_rate):
     self.faction_rate = faction_rate
+
+class Dungeon(Room):
+  @classmethod
+  def get_name(cls):
+    return "Dungeon"
+
+  def get_buttons(self, character):
+    return ["Enter Dungeon", "", "", "Never Mind"]
+
+  def get_text(self, character):
+    return "Level %d Dungeon" % self.level
+
+  def apply_choice(self, choice_text, logs, character):
+    if choice_text == "Enter Dungeon":
+      logs.append("You enter the dungeon...")
+      return (0, Room.ENTER_DUNGEON)
+    elif choice_text == "Never Mind":
+      return (0, Room.LEAVE_ROOM)

@@ -120,15 +120,16 @@ class Character(object):
     hp_gained = self.max_hp/10
     return self.restore_hp(hp_gained)
 
-  def apply_death(self, logs):
+  def apply_death(self, logs, penalty=True):
     logs.append("You have been defeated.")
-    logs.append("You were found by a passerby, and brought back to town.")
     self.restore_hp()
-    lost_gold = self.gold / 2
-    logs.append("You lost %d gold" % lost_gold)
-    self.gold -= lost_gold
-    self.buffs = []
     self.debuffs = []
+    if penalty:
+      logs.append("You were found by a passerby, and brought back to town.")
+      lost_gold = self.gold / 2
+      logs.append("You lost %d gold" % lost_gold)
+      self.gold -= lost_gold
+      self.buffs = []
 
   def get_effective_stat(self, stat):
     value = self.stats[stat]

@@ -10,13 +10,13 @@ from items import Item
 
 TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                   rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
-                  rooms.Inn, rooms.WeaponShop]
+                  rooms.Inn, rooms.WeaponShop, rooms.Dungeon]
 
 TOWER_LEVELS = 100
 UPDATE_TIME = 360
 DEBUG_FLOOR = 1
 DEBUG_BUILDING = None
-#DEBUG_BUILDING = rooms.Inn
+DEBUG_BUILDING = rooms.Dungeon
 #DEBUG_GOLD = 1000
 DEBUG_GOLD = None
 
@@ -29,7 +29,8 @@ DEBUG_GOLD = None
 
 # TODO: Add top floor state
 
-# START HERE: Add corrupted rune running into the game. (Start in rooms.Temple)
+# START HERE: Add passive traits
+# START HERE: Add Dungeon "room" to towns. Between quest / tower for grinding
 
 class GameState(object):
   """
@@ -69,6 +70,8 @@ class GameState(object):
     self.treasure_queue = []
     self.equipment_choice = None
     self.current_shop = None
+    self.rune_level = -1
+    self.character.runes = 1
 
   ###
   # Helper methods for changing state
@@ -108,7 +111,8 @@ class GameState(object):
 
   def pass_time(self, amount, logs):
     old_period = self.time_spent / UPDATE_TIME
-    self.time_spent += amount
+    if self.rune_level == -1:
+      self.time_spent += amount
     new_period = self.time_spent / UPDATE_TIME
     if old_period != new_period:
       self.tower_update_ready = True
@@ -147,8 +151,12 @@ class GameState(object):
       choices.append("Town")
       choices.append("Descend Tower")
       return choices
+    elif current_state == "RUNE_WORLD":
+      return ["Explore", "", "Item", "Leave Rune"]
     elif current_state == "TOWER":
       return ["Explore", "Rest", "Item", "Leave Tower"]
+    elif current_state == "DUNGEON":
+      return ["Explore", "Rest", "Item", "Leave Dungeon"]
     elif current_state == "COMBAT":
       return ["Attack", "Skill", "Item", "Escape"]
     elif current_state == "LOOT_EQUIPMENT":
@@ -191,6 +199,16 @@ class GameState(object):
       else:
         assert False
 
+  def handle_rune_completion(self, logs):
+    self.leave_state()
+    if self.rune_level == 0:
+      logs.append("Unpurified, the rune dissolves into dust.")
+      return
+    item = Equipment.get_new_armor(self.rune_level, slot=4, rarity=4)
+    self.treasure_queue.append(item)
+    self.rune_level = -1
+    self.handle_treasure(logs)
+
   ###
   # Helper methods for changing state
   ###
@@ -225,10 +243,24 @@ class GameState(object):
     logs.append("Generated %s equipment." % choice_text)
     self.change_state("TOWN")
 
-  def start_combat(self, logs, boss):
+  def start_combat(self, logs, boss, level=None):
+    if level is None:
+      level = self.floor
     self.add_state("COMBAT")
-    self.monster = Monster(self.floor, boss)
+    self.monster = Monster(level, boss)
     logs.append("You have encountered a monster")
+
+  def apply_choice_rune_world(self, logs, choice_text):
+    if choice_text == "Explore":
+      self.rune_level += 1
+      self.start_combat(logs, False, level=self.rune_level)
+    elif choice_text == "Item":
+      self.pass_time(0, logs)
+      self.add_state("USE_ITEM")
+    elif choice_text == "Leave Rune":
+      self.pass_time(0, logs)
+      logs.append("You leave the world of the rune")
+      self.handle_rune_completion(logs)
 
   def apply_choice_accept_quest(self, logs, choice_text):
     if choice_text == "Accept Quest":
@@ -320,18 +352,76 @@ class GameState(object):
       self.add_state("USE_ITEM")
     elif choice_text == "Leave Tower":
       self.pass_time(10, logs)
+      logs.append("You leave the tower")
       self.change_state("OUTSIDE")
 
+  def find_treasure(self, logs, item_count):
+    treasure = []
+    for i in range(item_count):
+      if random.random() < .5:
+        min_gold = self.floor * 10
+        max_gold = self.floor * 20
+        treasure.append(random.randint(min_gold, max_gold))
+      else:
+        rarity = min(random.randint(1, 4) for _ in range(3))
+        level = int(self.floor + random.gauss(0, 1))
+        treasure.append(Equipment.get_new_armor(level, rarity))
+    self.treasure_queue = treasure
+    self.handle_treasure(logs)
+
+  # TODO: Duplication with apply_choice_tower
+  def apply_choice_dungeon(self, logs, choice_text):
+    if choice_text == "Explore":
+      self.pass_time(random.randint(1, 5), logs)
+      logs.append("You explore the dungeon...")
+      random_number = random.random()
+      if random_number < .02:
+        logs.append("You find a treasure hoard!")
+        self.find_treasure(logs, 8)
+      elif random_number < .20:
+        logs.append("You find a treasure chest")
+        self.find_treasure(logs, 1)
+      else:
+        self.start_combat(logs, False)
+    elif choice_text == "Rest":
+      self.pass_time(5, logs)
+      logs.append("You rest")
+      hp_gained = self.character.rest()
+      logs.append("You regain %d HP" % hp_gained)
+      if random.random() < .2:
+        self.start_combat(logs, False)
+    elif choice_text == "Item":
+      self.pass_time(0, logs)
+      self.add_state("USE_ITEM")
+    elif choice_text == "Leave Dungeon":
+      self.pass_time(5, logs)
+      logs.append("You leave the dungeon")
+      self.leave_state()
+
   def apply_death(self, logs):
-    self.character.apply_death(logs)
+    # TODO: Clean this up. The code flow is messy
     self.leave_state()  # COMBAT
+    self.monster = None
     # TODO: This is hacky. Should probably have TOWER also be an add_state
     if self.current_state() == "QUEST":
+      self.character.apply_death(logs)
       self.leave_state()
+    elif self.current_state() == "RUNE_WORLD":
+      self.character.apply_death(logs, penalty=False)
+      self.handle_rune_completion(logs)
+      return
+    else:
+      self.character.apply_death(logs)
     self.change_state("TOWN")
-    self.monster = None
     self.pass_time(random.randint(0, 3 * self.floor), logs)
-    # TODO: Give quest monsters back their HP
+
+  def dungeon_victory_update(self, base_floor):
+    for floor in xrange(max(1, base_floor - 3),
+                        min(base_floor + 3, TOWER_LEVELS) + 1):
+      difference = abs(floor - base_floor)
+      multiplier = 1.0 - (.008 / (2 ** abs(difference)))
+      assert .992 <= multiplier < 1.0
+      self.tower_faction[floor] *= multiplier
 
   def apply_choice_combat(self, logs, choice_text):
     if choice_text == "Attack":
@@ -349,6 +439,8 @@ class GameState(object):
         self.leave_state()
         if self.current_state() == "QUEST":
           self.quest.defeat_monster()
+        if self.current_state() == "DUNGEON":
+          self.dungeon_victory_update(self.floor)
         self.handle_treasure(logs)
     elif choice_text == "Skill":
       self.pass_time(1, logs)
@@ -371,7 +463,7 @@ class GameState(object):
 
   def apply_choice_town(self, logs, choice_text):
     if choice_text == "Leave Town":
-      self.pass_time(5, logs)
+      self.pass_time(2, logs)
       self.change_state("OUTSIDE")
       logs.append("Left town")
     else:
@@ -381,7 +473,7 @@ class GameState(object):
           self.current_shop = shop
           break
       if shop:
-        self.pass_time(3, logs)
+        self.pass_time(1, logs)
         logs.append("Went to the %s" % shop.get_name())
         self.add_state("SHOP")
         shop.enter_shop(self.tower_faction[self.floor])
@@ -396,6 +488,12 @@ class GameState(object):
       pass
     elif result == self.current_shop.USE_ITEM:
       self.add_state("USE_ITEM")
+    elif result == self.current_shop.PURIFY_RUNE:
+      self.character.runes -= 1
+      self.rune_level = 0
+      self.add_state("RUNE_WORLD")
+    elif result == self.current_shop.ENTER_DUNGEON:
+      self.add_state("DUNGEON")
     else:
       assert False
 
@@ -497,6 +595,9 @@ class GameState(object):
       return self.current_shop.get_text(self.character)
     elif current_state == "USE_ITEM":
       return self.use_item_text()
-
+    elif current_state == "RUNE_WORLD":
+      return "Rune world level %d" % (self.rune_level + 1)
+    elif current_state == "DUNGEON":
+      return "Level %d Dungeon" % self.floor
     else:
       return "Error, no text for state %s" % current_state

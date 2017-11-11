@@ -6,6 +6,8 @@ NORMAL_CHANCES = [0.0, 0.2, 0.04, 0.008, 0.00016]
 BOSS_CHANCES = [0.0, 0.4, 0.16, 0.064, 0.0256]
 RUNE_CHANCE = 0.002
 BOSS_RUNE_CHANCE = 0.01
+#RUNE_CHANCE = 0.5
+#BOSS_RUNE_CHANCE = 0.5
 
 class Monster(object):
   def __init__(self, level, boss):
