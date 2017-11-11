@@ -12,25 +12,32 @@ TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                   rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
                   rooms.Inn, rooms.WeaponShop, rooms.Dungeon]
 
+TOWER_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
+                   rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
+                   rooms.Inn, rooms.WeaponShop]
+
+CHOICES = {"CHAR_CREATE": ["Strength", "Stamina", "Speed", "Intellect"],
+           "RUNE_WORLD": ["Explore", "", "Item", "Leave Rune"],
+           "TOWER": ["Explore", "Rest", "Item", "Leave Tower"],
+           "DUNGEON": ["Explore", "Rest", "Item", "Leave Dungeon"],
+           "COMBAT": ["Attack", "Skill", "Item", "Escape"],
+           "LOOT_EQUIPMENT": ["", "Keep Current", "Keep New", ""],
+           "ACCEPT_QUEST": ["", "Accept Quest", "Decline Quest", ""]}
+
 TOWER_LEVELS = 100
 UPDATE_TIME = 360
 DEBUG_FLOOR = 1
-DEBUG_BUILDING = None
-DEBUG_BUILDING = rooms.Dungeon
-#DEBUG_GOLD = 1000
-DEBUG_GOLD = None
+#DEBUG_BUILDING = None
+#DEBUG_GOLD = None
+DEBUG_BUILDING = rooms.Alchemist
+DEBUG_GOLD = 1000
 
 # TODO: It is probably not best to be passing logs around to everything?
 #       it could be part of the GameState, or we could use a logger for real
 
-# TODO: Reforging is too cheap. Probably 25 * (new_level) * (level_difference)?
-
-# TODO: Need a place to buy accessories? Maybe?
-
 # TODO: Add top floor state
 
 # START HERE: Add passive traits
-# START HERE: Add Dungeon "room" to towns. Between quest / tower for grinding
 
 class GameState(object):
   """
@@ -53,14 +60,10 @@ class GameState(object):
     self.towns = self.generate_towns()
     self.tower_lock = [True] * (TOWER_LEVELS + 1)
     self.tower_lock[1] = False
-    # TODO:
-    # When you complete a quest on a level, you gain some faction for that level
-    # and some for surrounding levels, decreasing cost of things?
     self.tower_faction = [1.0] * (TOWER_LEVELS + 1)
     self.tower_update_ready = False
     self.tower_quests = self.generate_quests()
     # Number of encounters remaining in current tower ascension
-    # TODO: Could be battles or other things (finding treasure, finding a shop)
     self.ascension_encounters = 0
     # Monster currently in combat with
     self.monster = None
@@ -71,7 +74,6 @@ class GameState(object):
     self.equipment_choice = None
     self.current_shop = None
     self.rune_level = -1
-    self.character.runes = 1
 
   ###
   # Helper methods for changing state
@@ -131,15 +133,12 @@ class GameState(object):
       assert .94 < multiplier < 1.0
       self.tower_faction[floor] *= multiplier
 
-  # TODO: Clean this up. While some of them require logic, a lot of them do not,
-  #       so we could move those to a dictionary, and leave only the ones that
-  #       require logic
   def get_choices(self):
     """Return choices for next actions for the UI."""
     current_state = self.current_state()
-    if current_state == "CHAR_CREATE":
-      return ["Strength", "Stamina", "Speed", "Intellect"]
-    elif current_state == "TOWN":
+    if current_state in CHOICES:
+      return CHOICES[current_state]
+    if current_state == "TOWN":
       choices = [shop.get_name() for shop in self.towns[self.floor]]
       return ["Leave Town"] + choices
     elif current_state == "SHOP":
@@ -151,18 +150,6 @@ class GameState(object):
       choices.append("Town")
       choices.append("Descend Tower")
       return choices
-    elif current_state == "RUNE_WORLD":
-      return ["Explore", "", "Item", "Leave Rune"]
-    elif current_state == "TOWER":
-      return ["Explore", "Rest", "Item", "Leave Tower"]
-    elif current_state == "DUNGEON":
-      return ["Explore", "Rest", "Item", "Leave Dungeon"]
-    elif current_state == "COMBAT":
-      return ["Attack", "Skill", "Item", "Escape"]
-    elif current_state == "LOOT_EQUIPMENT":
-      return ["", "Keep Current", "Keep New", ""]
-    elif current_state == "ACCEPT_QUEST":
-      return ["", "Accept Quest", "Decline Quest", ""]
     elif current_state == "QUEST":
       if self.quest.complete():
         return ["Complete Quest", "", "", "Leave Quest"]
@@ -186,8 +173,6 @@ class GameState(object):
         logs.append("You got %d gold." % item)
         self.character.gold += item
       elif isinstance(item, Equipment):
-        # TODO: Auto-equip if strictly better
-        #       Auto-shard if strictly worse
         logs.append("You got the following equipment")
         logs.append(str(item))
         self.add_state("LOOT_EQUIPMENT")
@@ -330,12 +315,27 @@ class GameState(object):
     if choice_text == "Explore":
       self.pass_time(random.randint(1, 10), logs)
       logs.append("You explore the tower...")
-      # TODO: Add non-combat options in here
       if self.ascension_encounters > 0:
         self.ascension_encounters -= 1
-        self.start_combat(logs, False)
+        random_number = random.random()
+        if random_number < .01:
+          logs.append("You find a treasure hoard!")
+          self.find_treasure(logs, 8)
+        elif random_number < .025:
+          logs.append("You find a shop")
+          self.character.restore_hp()
+          shop = random.choice(TOWER_BUILDINGS)(self.floor)
+          self.add_state("SHOP")
+          self.current_shop = shop
+          shop.enter_shop(self.tower_faction[self.floor])
+        elif random_number < .125:
+          logs.append("You find a treasure chest")
+          self.find_treasure(logs, 1)
+        elif random_number < .165:
+          self.start_combat(logs, True)  # Boss monster
+        else:
+          self.start_combat(logs, False)
       else:
-        # TODO: Add boss every tenth floor
         self.floor += 1
         self.frontier = max(self.frontier, self.floor)
         self.change_state("OUTSIDE")
@@ -364,7 +364,7 @@ class GameState(object):
         treasure.append(random.randint(min_gold, max_gold))
       else:
         rarity = min(random.randint(1, 4) for _ in range(3))
-        level = int(self.floor + random.gauss(0, 1))
+        level = max(1, int(self.floor + random.gauss(0, 1)))
         treasure.append(Equipment.get_new_armor(level, rarity))
     self.treasure_queue = treasure
     self.handle_treasure(logs)
@@ -541,8 +541,6 @@ class GameState(object):
     self.leave_state()
     self.handle_treasure(logs)
 
-  # TODO: Implement: ALCHEMIST, TEMPLE, INN
-
   def apply_choice(self, choice):
     """Apply the given action choice to this gamestate, modifying it."""
     logs = []
@@ -555,9 +553,6 @@ class GameState(object):
     except AttributeError as exc:
       print exc  # pylint: disable=print-statement
       logs.append("apply_choice not implemented yet, state: %s" % current_state)
-      # Hack. TODO: remove
-      if len(self.state) > 1:
-        self.leave_state()
     return logs
 
   def loot_choice_text(self):
@@ -571,8 +566,6 @@ class GameState(object):
       pieces.append("Use Item #%d: %s" % (i + 1, item.get_name()))
     return "\n".join(pieces)
 
-  # TODO: This and get_choices should probably be done differently (with a dict
-  #       for example
   def panel_text(self):
     """Return text to display to the player about the current game state."""
     # TODO: Add explanations for menu choices, as well.

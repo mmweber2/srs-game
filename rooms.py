@@ -601,6 +601,7 @@ class Temple(Room):
 
 class Alchemist(Room):
   def __init__(self, level):
+    super(Alchemist, self).__init__(level)
     self.level = level
     self.faction_rate = 1.0
     self.possible_items = [items.MinorHealthPotion, items.MajorHealthPotion,
@@ -614,8 +615,8 @@ class Alchemist(Room):
   def generate_inventory(self):
     inventory = []
     for _ in range(3):
-      pot = [x() for x in self.possible_items]   # Shouldn't redefine item
-      inventory.append(max((self.item_rate(pot), pot) for pot in pot)[1])
+      pots = [x() for x in self.possible_items]   # Shouldn't redefine item
+      inventory.append(max((self.item_rate(p), p) for p in pots)[1])
     return inventory
 
   def refresh(self):

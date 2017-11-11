@@ -9,7 +9,6 @@ def write_color_text(rtc, string):
   # Takes a wx.richtext.RichTextCtrl and writes my wacky custom color-coded
   # text out to it.
   # Colors are specified via `r,g,b` in the text
-  # TODO: There might be some better way to do this via the control's XML?
   # Note: Assumes there are no "`" in the text.
   tokens = string.split("`")
   rtc.BeginTextColour((0, 0, 0))
@@ -26,7 +25,6 @@ class ButtonPanel(wx.Panel):
   def __init__(self, parent):
     wx.Panel.__init__(self, parent, wx.NewId())
     # Buttons
-    # TODO: Keybinds not in the label
     self.button_sizer = wx.GridSizer(rows=3, cols=3, hgap=5, vgap=5)
     self.button_names = [" " * 30 for _ in range(4)]
     self.buttons = []
@@ -99,12 +97,11 @@ class MainWindow(wx.Frame):
     self.status_bar.SetStatusText("Time: 0", 3)
 
     # Make menus
-    # TODO: Not working
-    file_menu = wx.Menu()
-    menu_exit = file_menu.Append(wx.ID_EXIT, "E&xit", "Game over!")
-
     menu_bar = wx.MenuBar()
+    file_menu = wx.Menu()
+    menu_exit = file_menu.Append(wx.NewId(), "E&xit", "Game over!")
     menu_bar.Append(file_menu, "&File")
+    self.Bind(wx.EVT_MENU, self.on_exit, menu_exit)
     self.SetMenuBar(menu_bar)
 
     self.top_sizer = wx.BoxSizer(wx.HORIZONTAL)   # Top level
@@ -164,9 +161,7 @@ class MainWindow(wx.Frame):
 
   def button_press(self, evt, number):  # pylint: disable=unused-argument
     if not self.button_panel.buttons[number].IsEnabled():
-      self.log_panel.add_entry("Debug: " + str(number) + " not enabled")
       return   # TODO: Do I need a Skip()?
-    #self.log_panel.add_entry("Debug: " + str(number))
     logs = self.game_state.apply_choice(number)
     for log in logs:
       self.log_panel.add_entry(log)
