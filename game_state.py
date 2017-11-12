@@ -1,6 +1,6 @@
 """Represents the current state of the game. Main game logic module."""
 import random
-from character import Character
+from character import Character, TRAITS
 from monster import Monster
 from combat import Combat
 from equipment import Equipment
@@ -584,6 +584,16 @@ class GameState(object):
       pieces.append("Use Item #%d: %s" % (i + 1, item.get_name()))
     return "\n".join(pieces)
 
+  def trait_text(self):
+    pieces = []
+    pieces.append("Select a trait")
+    choices = self.get_choices()
+    for choice in choices:
+      if choice in TRAITS:
+        pieces.append("%s: %s" % (choice, TRAITS[choice]))
+    return "\n".join(pieces)
+
+
   def panel_text(self):
     """Return text to display to the player about the current game state."""
     # TODO: Add explanations for menu choices, as well.
@@ -611,6 +621,6 @@ class GameState(object):
     elif current_state == "DUNGEON":
       return "Level %d Dungeon" % self.floor
     elif current_state == "LEVEL_UP":
-      return "You gained a level!\nSelect a new passive"
+      return self.trait_text()
     else:
       return "Error, no text for state %s" % current_state
