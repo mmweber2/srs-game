@@ -1,9 +1,36 @@
 import random
+import collections
 from equipment import Equipment, RARITY
 from effect import Effect, Buff, Debuff
 
 STAT_ORDER = ["Strength", "Intellect", "Speed", "Stamina", "Defense",
               "Magic Defense"]
+
+TRAITS = {"Beefy!": "Increase physical damage",
+          "Wizardry": "Increase magical damage",
+          "Perseverance": "Chance to survive fatal attacks in combat",
+          # "Scholar": "On level up, chance to choose new skills",
+          "Self-Improvement": "On level up, chance to choose new passives",
+          "Quick Learner": "Improved experience gain",
+          "Merchant Warrior": "Improved gold gain",
+          "Clarity of Mind": "SP regeneration over time",
+          "Regeneration": "HP regeneration over time",
+          "Stocky!": "Reduce physical damage",
+          "Mental Toughness": "Reduce magical damage",
+         }
+
+
+# TODO: To implement: Scholar
+# TODO: There are more on the sheet
+# -- Increased Stats
+# -- Lightning Strike (chance to automatically go again after an attack)
+# -- Dodge (chance to avoid all damage from an attack)
+# -- Repeated Valor (chance to have once-per-battle skills refresh per turn)
+# -- Durable (Chance to resist debuffs)
+# -- OHKO resist (Chance to resist any attack that does more than Max HP)
+# -- C-c-c-combobreaker (Chance to prevent opponent getting multiple turns)
+# -- Libra (See monster stats)
+# TODO: General resist damage trait?
 
 class Character(object):
   def __init__(self):
@@ -23,6 +50,8 @@ class Character(object):
     self.buffs = []
     self.debuffs = []
     self.runes = 0
+    self.traits = collections.defaultdict(int)
+    self.reroll_counter = 0
 
   def add_item(self, item):
     if len(self.items) >= 3:
@@ -49,6 +78,11 @@ class Character(object):
       if buff.active():
         remaining_buffs.append(buff)
     self.buffs = remaining_buffs
+    restored_hp = self.traits["Regeneration"] * self.max_hp * time_passed / 100
+    # Not used yet
+    restored_sp = self.traits["Clarity of Mind"] * time_passed
+    self.restore_hp(restored_hp)
+    self.restore_sp(restored_sp)
     self.recalculate_max_hp()
 
     remaining_debuffs = []
@@ -58,6 +92,16 @@ class Character(object):
         remaining_debuffs.append(debuff)
     self.debuffs = remaining_debuffs
     self.recalculate_max_hp()
+
+  def gain_gold(self, amount):
+    amount_gained = amount * (1.00 + (0.05 * self.traits["Merchant Warrior"]))
+    amount_gained = int(amount_gained)
+    self.gold += amount_gained
+    return amount_gained
+
+  def restore_sp(self, amount):
+    # TODO
+    pass
 
   def make_initial_equipment(self, choice):
     for i in range(len(self.equipment)):
@@ -76,6 +120,14 @@ class Character(object):
     pieces.append("Equipment:\n")
     for piece in self.equipment:
       pieces.append(str(piece) + "\n")
+    pieces.append("Traits: ")
+    if sum(self.traits.values()) == 0:
+      pieces.append("None")
+    else:
+      for trait in self.traits:
+        if self.traits[trait] > 0:
+          pieces.append("%s: %d  " % (trait, self.traits[trait]))
+    pieces.append("\n")
     pieces.append("Materials: ")
     if sum(self.materials) == 0:
       pieces.append("None\n")
@@ -177,7 +229,7 @@ class Character(object):
     self.recalculate_max_hp()
 
   def train_xp(self, level, logs):
-    self.gain_exp(level * 25, level, logs, level_adjust=False)
+    return self.gain_exp(level * 25, level, logs, level_adjust=False)
 
   def train_stats(self, logs):
     stat = random.choice(self.stats.keys())
@@ -188,8 +240,41 @@ class Character(object):
     for i in xrange(len(materials)):
       self.materials[i] += materials[i]
 
+  def get_trait_choices(self):
+    # TODO: DIRTY DIRTY HACK
+    # The problem is, in the game_state, it's assumed that multiple calls to
+    # get_choices (which calls this) will return the same value. But these
+    # choices are random. We want them to be the same for the two calls during
+    # level-up, and these values should not change between those two calls.
+    # To get around this, we probably would need to store the choices in
+    # game_state and know to look at them for only levelling up.
+    random.seed((self.exp, self.current_hp, self.gold, self.reroll_counter))
+    choices = [""]
+    reroll_trait_level = self.traits["Self-Improvement"]
+    reroll_chance = float(reroll_trait_level) / (reroll_trait_level + 1)
+    if random.random() < reroll_chance:
+      choices.append("Get New Traits")
+    while len(choices) < 4:
+      best_roll, best_trait = 0.0, None
+      for trait in TRAITS:
+        current_level = self.traits[trait]
+        roll = random.random() / (current_level + 1)
+        if roll > best_roll:
+          best_roll, best_trait = roll, trait
+      if best_trait not in choices:
+        choices.append(best_trait)
+    return choices
+
+  def learn_trait(self, trait):
+    if trait == "Get New Traits":
+      self.reroll_counter += 1
+      return False
+    assert trait in TRAITS
+    self.traits[trait] += 1
+    return True
+
   def gain_exp(self, exp, encounter_level, logs, level_adjust=True):
-    exp_gained = exp
+    exp_gained = exp * (1.0 + (0.03 * self.traits["Quick Learner"]))
     level_difference = encounter_level - self.level
     if level_adjust:
       exp_gained = int(exp_gained * (1.1 ** level_difference))
@@ -198,8 +283,11 @@ class Character(object):
     self.exp += total_xp_gain
     added_xp = total_xp_gain - exp_gained
     logs.append("You have gained %d XP (%+d buffs)" % (exp_gained, added_xp))
+    levels_gained = 0
     while self.exp >= self.next_level_exp():
       self.exp -= self.next_level_exp()
       self.level += 1
       logs.append("You have reached level %d!" % self.level)
       self.level_up(logs)
+      levels_gained += 1
+    return levels_gained

@@ -27,10 +27,10 @@ CHOICES = {"CHAR_CREATE": ["Strength", "Stamina", "Speed", "Intellect"],
 TOWER_LEVELS = 100
 UPDATE_TIME = 360
 DEBUG_FLOOR = 1
-#DEBUG_BUILDING = None
-#DEBUG_GOLD = None
-DEBUG_BUILDING = rooms.Alchemist
-DEBUG_GOLD = 1000
+DEBUG_BUILDING = None
+DEBUG_GOLD = None
+#DEBUG_BUILDING = rooms.Alchemist
+#DEBUG_GOLD = 1000
 
 # TODO: It is probably not best to be passing logs around to everything?
 #       it could be part of the GameState, or we could use a logger for real
@@ -74,6 +74,7 @@ class GameState(object):
     self.equipment_choice = None
     self.current_shop = None
     self.rune_level = -1
+    self.levelups = 0
 
   ###
   # Helper methods for changing state
@@ -163,6 +164,9 @@ class GameState(object):
         choices.insert(0, "")
       choices.append("Never Mind")
       return choices
+    elif current_state == "LEVEL_UP":
+      return self.character.get_trait_choices()
+      # Next: Handle the trait choice, then implement the traits
     else:
       return ["Error", "Error", "Error", "Error"]
 
@@ -170,8 +174,8 @@ class GameState(object):
     while self.treasure_queue:
       item = self.treasure_queue.pop()
       if isinstance(item, int):
-        logs.append("You got %d gold." % item)
-        self.character.gold += item
+        amount_gained = self.character.gain_gold(item)
+        logs.append("You got %d gold." % amount_gained)
       elif isinstance(item, Equipment):
         logs.append("You got the following equipment")
         logs.append(str(item))
@@ -295,10 +299,10 @@ class GameState(object):
       self.leave_state()
     elif choice_text == "Complete Quest":
       logs.append("You complete the quest.")
-      logs.append("You gain %d gold." % self.quest.gp_reward)
-      self.character.gold += self.quest.gp_reward
-      self.character.gain_exp(self.quest.xp_reward, self.floor, logs,
-                              level_adjust=False)
+      amount_gained = self.character.gain_gold(self.quest.gp_reward)
+      logs.append("You gain %d gold." % amount_gained)
+      levelups = self.character.gain_exp(self.quest.xp_reward, self.floor, logs,
+                                         level_adjust=False)
       self.treasure_queue = self.quest.get_treasure()
       self.faction_update(self.floor)
       # Fixes a bug when the tower update is pending
@@ -309,6 +313,9 @@ class GameState(object):
           self.tower_quests[self.floor] = Quest(self.floor)
         else:
           self.tower_quests[self.floor] = None
+      if levelups > 0:
+        self.levelups = levelups
+        self.add_state("LEVEL_UP")
       self.handle_treasure(logs)
 
   def apply_choice_tower(self, logs, choice_text):
@@ -432,8 +439,8 @@ class GameState(object):
         self.apply_death(logs)
       elif result == Combat.MONSTER_DEAD:
         logs.append("You have defeated %s" % self.monster.name)
-        self.character.gain_exp(self.monster.calculate_exp(),
-                                self.monster.level, logs)
+        levelups = self.character.gain_exp(self.monster.calculate_exp(),
+                                           self.monster.level, logs)
         self.treasure_queue = self.monster.get_treasure()
         self.monster = None
         self.leave_state()
@@ -441,6 +448,9 @@ class GameState(object):
           self.quest.defeat_monster()
         if self.current_state() == "DUNGEON":
           self.dungeon_victory_update(self.floor)
+        if levelups > 0:
+          self.levelups = levelups
+          self.add_state("LEVEL_UP")
         self.handle_treasure(logs)
     elif choice_text == "Skill":
       self.pass_time(1, logs)
@@ -459,6 +469,14 @@ class GameState(object):
       elif result == Combat.CHARACTER_ESCAPED:
         logs.append("You escaped successfully")
         self.monster = None
+        self.leave_state()
+
+  def apply_choice_level_up(self, logs, choice_text):
+    assert self.levelups > 0
+    learned = self.character.learn_trait(choice_text)
+    if learned:
+      self.levelups -= 1
+      if self.levelups == 0:
         self.leave_state()
 
   def apply_choice_town(self, logs, choice_text):
@@ -592,5 +610,7 @@ class GameState(object):
       return "Rune world level %d" % (self.rune_level + 1)
     elif current_state == "DUNGEON":
       return "Level %d Dungeon" % self.floor
+    elif current_state == "LEVEL_UP":
+      return "You gained a level!\nSelect a new passive"
     else:
       return "Error, no text for state %s" % current_state

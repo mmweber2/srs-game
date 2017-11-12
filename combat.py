@@ -18,6 +18,7 @@ class Combat(object):
     # Character action
     result = cls.perform_action(action, info, character, monster, logs)
     if result == cls.TARGET_DEAD:
+      # TODO: If monsters get traits, add perserverance here
       return cls.MONSTER_DEAD
     elif result == cls.ACTOR_ESCAPED:
       return cls.CHARACTER_ESCAPED
@@ -26,7 +27,12 @@ class Combat(object):
       action, info = monster.get_action(character)
       result = cls.perform_action(action, info, monster, character, logs)
       if result == cls.TARGET_DEAD:
-        return cls.CHARACTER_DEAD
+        death_chance = 0.95 ** character.traits["Perseverance"]
+        if random.random() < death_chance:
+          return cls.CHARACTER_DEAD
+        else:
+          logs.append("Your perseverance saved you from death.")
+          character.current_hp = 1
       elif result == cls.ACTOR_ESCAPED:
         return cls.MONSTER_ESCAPED
       next_turn = cls.get_next_actor(character, monster)
@@ -50,11 +56,25 @@ class Combat(object):
     return cls.TARGET_DEAD if target.current_hp <= 0 else cls.TARGET_ALIVE
 
   @classmethod
+  def apply_traits(cls, damage, damage_type, actor, target):
+    if damage_type == "Physical":
+      attack_factor = 1.00 + (.05 * actor.traits["Beefy!"])
+      defense_factor = 0.95 ** target.traits["Stocky!"]
+    elif damage_type == "Magic":
+      attack_factor = 1.00 + (.05 * actor.traits["Wizardry"])
+      defense_factor = 0.95 ** target.traits["Mental Toughness"]
+    else:
+      assert False
+    damage = max(1, damage * attack_factor * defense_factor)
+    return damage
+
+  @classmethod
   def action_attack(cls, _, actor, target, logs):
     """Attacks, applies damage, returns True if target dies."""
     logs.append("%s attacks %s" % (actor.name, target.name))
     damage = actor.get_damage()
     damage_type = actor.get_damage_type()
+    damage = cls.apply_traits(damage, damage_type, actor, target)
     if damage_type == "Physical":
       attack = actor.get_effective_stat("Strength")
       defense = target.get_effective_stat("Defense")

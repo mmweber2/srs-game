@@ -1,3 +1,4 @@
+import collections
 import random
 from equipment import Equipment
 
@@ -37,6 +38,9 @@ class Monster(object):
       self.name = "Boss Monster, Level %d" % level
     else:
       self.name = "Generic Monster, Level %d" % level
+    # TODO: Should monsters get traits? If so, we might want to break them
+    #       out from "character"
+    self.traits = collections.defaultdict(int)
 
   def hp_string(self):
     percent = int(100 * self.current_hp / self.max_hp)

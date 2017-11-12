@@ -56,7 +56,7 @@ class TrainingRoom(Room):
 
   def get_text(self, character):
     pieces = []
-    pieces.append("Gain XP: %d gold (%d xp)" %
+    pieces.append("Gain XP: %d gold (%d base xp)" %
                   (self.xp_training_cost(), self.level * 25))
     pieces.append("Gain Stats: %d gold (+1 random stat)" %
                   self.stat_training_cost(character))
@@ -643,7 +643,7 @@ class Alchemist(Room):
     pieces = []
     for i, item in enumerate(self.inventory):
       if item:
-        pieces.append("Choice #%d: %s (%d gold)" % (i, item.get_name(),
+        pieces.append("Choice #%d: %s (%d gold)" % (i + 1, item.get_name(),
                                                     self.get_cost(item)))
       else:
         pieces.append("")

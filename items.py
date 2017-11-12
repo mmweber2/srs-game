@@ -19,6 +19,7 @@ class Item(object):
 
 class MinorHealthPotion(Item):
   def __init__(self):
+    super(MinorHealthPotion, self).__init__()
     self.info = {"name": "Minor HP Pot",
                  "value": 100,
                  "item_level": 1}
@@ -28,33 +29,37 @@ class MinorHealthPotion(Item):
 
 class HealthPotion(Item):
   def __init__(self):
+    super(HealthPotion, self).__init__()
     self.info = {"name": "HP Pot",
                  "value": 1000,
                  "item_level": 10}
   def apply(self, character, monster, logs):
-    character.restore_hp(400)
+    hp_gained = character.restore_hp(400)
     logs.append("You restored %d HP" % hp_gained)
 
 class MajorHealthPotion(Item):
   def __init__(self):
+    super(MajorHealthPotion, self).__init__()
     self.info = {"name": "Major HP Pot",
                  "value": 10000,
                  "item_level": 30}
   def apply(self, character, monster, logs):
-    character.restore_hp(1600)
+    hp_gained = character.restore_hp(1600)
     logs.append("You restored %d HP" % hp_gained)
 
 class SuperHealthPotion(Item):
   def __init__(self):
+    super(SuperHealthPotion, self).__init__()
     self.info = {"name": "Major HP Pot",
                  "value": 100000,
                  "item_level": 60}
   def apply(self, character, monster, logs):
-    character.restore_hp(6400)
+    hp_gained = character.restore_hp(6400)
     logs.append("You restored %d HP" % hp_gained)
 
 class InnFood(Item):
   def __init__(self):
+    super(InnFood, self).__init__()
     self.info = {"name": "Inn-made Bento",
                  "value": 0,
                  "item_level": 1}
