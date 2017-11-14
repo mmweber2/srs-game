@@ -1,6 +1,7 @@
 import collections
 import random
 from equipment import Equipment
+from effect import Debuff
 
 # TODO: Should Monster and Character subclass from something?
 NORMAL_CHANCES = [0.0, 0.2, 0.04, 0.008, 0.00016]
@@ -32,6 +33,8 @@ class Monster(object):
       self.stats[stat] = int(self.stats[stat])
       self.stats[stat] = max(1, self.stats[stat])
     self.max_hp = self.stats["Stamina"] * 5
+    # DEBUG
+    self.max_hp = 10000
     self.current_hp = self.max_hp
     # TODO: Name generation
     if boss:
@@ -41,10 +44,23 @@ class Monster(object):
     # TODO: Should monsters get traits? If so, we might want to break them
     #       out from "character"
     self.traits = collections.defaultdict(int)
+    self.buffs = []
+    self.debuffs = []
 
   def hp_string(self):
     percent = int(100 * self.current_hp / self.max_hp)
     return "%d%%" % percent
+
+  def pass_time(self, amount):
+    remaining_debuffs = []
+    for debuff in self.debuffs:
+      debuff.pass_time(amount)
+      if debuff.active():
+        remaining_debuffs.append(debuff)
+    self.debuffs = remaining_debuffs
+
+  def add_debuff(self, new_debuff):
+    Debuff.add_debuff(self.debuffs, new_debuff)
 
   def __str__(self):
     debug = True
@@ -52,7 +68,12 @@ class Monster(object):
     pieces.append("Name: %s\n" % self.name)
     pieces.append("HP: %s\n" % self.hp_string())
     pieces.append("Buffs: None\n")
-    pieces.append("Debuffs: None\n")
+    pieces.append("Debuffs: ")
+    pieces.append(", ".join(str(debuff) for debuff in self.debuffs))
+    if self.debuffs:
+      pieces.append("\n")
+    else:
+      pieces.append("None\n")
     if debug:
       pieces.append("***DEBUG***\n")
       pieces.append("stats: %r\n" % self.stats)

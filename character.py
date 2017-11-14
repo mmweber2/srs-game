@@ -1,5 +1,6 @@
 import random
 import collections
+import skills
 from equipment import Equipment, RARITY
 from effect import Effect, Buff, Debuff
 
@@ -20,6 +21,7 @@ TRAITS = {"Beefy!": "Increase physical damage",
          }
 
 
+# TRAITS:
 # TODO: To implement: Scholar
 # TODO: There are more on the sheet
 # -- Increased Stats
@@ -37,13 +39,17 @@ class Character(object):
     # Weapon, Helm, Chest, Legs, Accessory
     self.equipment = [None, None, None, None, None]
     self.items = []
+    self.skills = []
     self.stats = {"Strength": 20, "Stamina": 20, "Defense": 20, "Speed": 20,
                   "Intellect": 20, "Magic Defense": 20}
     self.gold = 100
     self.name = "Hero?"
     self.base_hp = 20
+    self.base_sp = 20
     self.max_hp = 5 * self.stats["Stamina"] + self.base_hp
+    self.max_sp = self.base_sp + self.stats["Intellect"]
     self.current_hp = self.max_hp
+    self.current_sp = self.max_sp
     self.level = 1
     self.exp = 0
     self.materials = [0] * len(RARITY)
@@ -52,6 +58,8 @@ class Character(object):
     self.runes = 0
     self.traits = collections.defaultdict(int)
     self.reroll_counter = 0
+    # DEBUG
+    self.skills.append(skills.Blind(5))
 
   def add_item(self, item):
     if len(self.items) >= 3:
@@ -65,11 +73,11 @@ class Character(object):
 
   def add_buff(self, new_buff):
     Buff.add_buff(self.buffs, new_buff)
-    self.recalculate_max_hp()
+    self.recalculate_maxes()
 
-  def add_debuff(self, new_buff):
-    Debuff.add_debuff(self.buffs, new_buff)
-    self.recalculate_max_hp()
+  def add_debuff(self, new_debuff):
+    Debuff.add_debuff(self.debuffs, new_debuff)
+    self.recalculate_maxes()
 
   def pass_time(self, time_passed):
     remaining_buffs = []
@@ -83,7 +91,7 @@ class Character(object):
     restored_sp = self.traits["Clarity of Mind"] * time_passed
     self.restore_hp(restored_hp)
     self.restore_sp(restored_sp)
-    self.recalculate_max_hp()
+    self.recalculate_maxes()
 
     remaining_debuffs = []
     for debuff in self.debuffs:
@@ -91,17 +99,13 @@ class Character(object):
       if debuff.active():
         remaining_debuffs.append(debuff)
     self.debuffs = remaining_debuffs
-    self.recalculate_max_hp()
+    self.recalculate_maxes()
 
   def gain_gold(self, amount):
     amount_gained = amount * (1.00 + (0.05 * self.traits["Merchant Warrior"]))
     amount_gained = int(amount_gained)
     self.gold += amount_gained
     return amount_gained
-
-  def restore_sp(self, amount):
-    # TODO
-    pass
 
   def make_initial_equipment(self, choice):
     for i in range(len(self.equipment)):
@@ -111,6 +115,7 @@ class Character(object):
     pieces = []
     pieces.append("Character:\n")
     pieces.append("HP: %d / %d\n" % (self.current_hp, self.max_hp))
+    pieces.append("SP: %d / %d\n" % (self.current_sp, self.max_sp))
     pieces.append("Level: %d " % self.level)
     pieces.append("(%d / %d)\n" % (self.exp, self.next_level_exp()))
     for stat in STAT_ORDER:
@@ -127,6 +132,13 @@ class Character(object):
       for trait in self.traits:
         if self.traits[trait] > 0:
           pieces.append("%s: %d  " % (trait, self.traits[trait]))
+    pieces.append("\n")
+    pieces.append("Skills: ")
+    if not self.skills:
+      pieces.append("None")
+    else:
+      for skill in self.skills:
+        pieces.append("%s: %d" % (skill.get_name(), skill.level))
     pieces.append("\n")
     pieces.append("Materials: ")
     if sum(self.materials) == 0:
@@ -149,8 +161,6 @@ class Character(object):
       pieces.append("\n")
     else:
       pieces.append("None\n")
-    for debuff in self.debuffs:
-      pieces.append(str(debuff))
     pieces.append("Items: ")
     if self.items:
       pieces.append(", ".join(item.get_name() for item in self.items))
@@ -168,6 +178,14 @@ class Character(object):
       self.current_hp = min(self.max_hp, self.current_hp + amount)
     return self.current_hp - old_current
 
+  def restore_sp(self, amount=None):
+    old_current = self.current_sp
+    if amount is None:
+      self.current_sp = self.max_sp
+    else:
+      self.current_sp = min(self.max_sp, self.current_sp + amount)
+    return self.current_sp - old_current
+
   def rest(self):
     hp_gained = self.max_hp/10
     return self.restore_hp(hp_gained)
@@ -175,6 +193,7 @@ class Character(object):
   def apply_death(self, logs, penalty=True):
     logs.append("You have been defeated.")
     self.restore_hp()
+    self.restore_sp()
     self.debuffs = []
     if penalty:
       logs.append("You were found by a passerby, and brought back to town.")
@@ -196,7 +215,7 @@ class Character(object):
     slot = item.slot
     removed = self.equipment[slot]
     self.equipment[slot] = item
-    self.recalculate_max_hp()
+    self.recalculate_maxes()
     return removed
 
   def get_damage(self):
@@ -210,12 +229,17 @@ class Character(object):
     # TODO: Something more "complex", lol
     return self.level * 100
 
-  def recalculate_max_hp(self):
+  def recalculate_maxes(self):
     new_max_hp = self.get_effective_stat("Stamina") * 5 + self.base_hp
     difference = new_max_hp - self.max_hp
     self.current_hp += max(0, difference)  # Don't lose HP for equipping
     self.max_hp = new_max_hp
     self.current_hp = min(self.current_hp, self.max_hp)  # Unless max_hp drops
+    new_max_sp = self.get_effective_stat("Intellect") + self.base_sp
+    difference = new_max_sp - self.max_sp
+    self.current_sp += max(0, difference)  # Don't lose HP for equipping
+    self.max_sp = new_max_sp
+    self.current_sp = min(self.current_sp, self.max_sp)  # Unless max_hp drops
 
   def level_up(self, logs):
     for stat in self.stats:
@@ -224,9 +248,12 @@ class Character(object):
         self.stats[stat] += increase
         logs.append("You have gained %d %s" % (increase, stat))
     hp_gain = random.randint(10, 20)
+    sp_gain = random.randint(5, 10)
     self.base_hp += hp_gain
+    self.base_sp += sp_gain
     logs.append("You have gained %d HP" % hp_gain)
-    self.recalculate_max_hp()
+    logs.append("You have gained %d SP" % sp_gain)
+    self.recalculate_maxes()
 
   def train_xp(self, level, logs):
     return self.gain_exp(level * 25, level, logs, level_adjust=False)
@@ -257,8 +284,8 @@ class Character(object):
     while len(choices) < 4:
       best_roll, best_trait = 0.0, None
       for trait in TRAITS:
-        current_level = self.traits[trait]
-        roll = random.random() / (current_level + 1)
+        rerolls = self.traits[trait] + 1
+        roll = min(random.random() for _ in range(rerolls))
         if roll > best_roll:
           best_roll, best_trait = roll, trait
       if best_trait not in choices:

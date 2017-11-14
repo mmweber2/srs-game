@@ -1,4 +1,5 @@
 import random
+from effect import Effect
 
 class Combat(object):
   CHARACTER_DEAD = 0
@@ -12,6 +13,7 @@ class Combat(object):
   CHARACTER_ESCAPED = 8
   MONSTER_ESCAPED = 9
   ACTOR_ESCAPED = 10
+  ACTOR_TURN = 11
 
   @classmethod
   def perform_turn(cls, action, info, character, monster, logs):
@@ -22,7 +24,12 @@ class Combat(object):
       return cls.MONSTER_DEAD
     elif result == cls.ACTOR_ESCAPED:
       return cls.CHARACTER_ESCAPED
-    next_turn = cls.get_next_actor(character, monster)
+
+    if result == Combat.ACTOR_TURN:
+      next_turn = cls.CHARACTER_TURN
+    else:
+      next_turn = cls.get_next_actor(character, monster)
+
     while next_turn == cls.MONSTER_TURN:
       action, info = monster.get_action(character)
       result = cls.perform_action(action, info, monster, character, logs)
@@ -69,11 +76,17 @@ class Combat(object):
     return damage
 
   @classmethod
-  def action_attack(cls, _, actor, target, logs):
+  def action_skill(cls, info, actor, target, logs):
+    logs.append("%s uses %s" % (actor.name, info.get_name()))
+    return info.apply_skill(actor, target, logs)
+
+  @classmethod
+  def action_attack(cls, _, actor, target, logs, attack_type=None,
+                    multiplier=None):
     """Attacks, applies damage, returns True if target dies."""
     logs.append("%s attacks %s" % (actor.name, target.name))
     damage = actor.get_damage()
-    damage_type = actor.get_damage_type()
+    damage_type = attack_type or actor.get_damage_type()
     damage = cls.apply_traits(damage, damage_type, actor, target)
     if damage_type == "Physical":
       attack = actor.get_effective_stat("Strength")
@@ -85,7 +98,13 @@ class Combat(object):
       assert False
     factor = float(attack) / defense
     factor = factor ** .5
+    if multiplier:
+      factor *= multiplier
     damage = int(damage * factor)
+    if Effect.get_combined_impact("Blinded", actor.buffs, actor.debuffs) > 0:
+      if random.random() < .5:
+        logs.append("Misses due to Blindness")
+        return cls.TARGET_ALIVE
     logs.append("Hits for %d %s damage" % (damage, damage_type))
     return cls.apply_damage(target, damage)
 

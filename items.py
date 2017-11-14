@@ -17,6 +17,8 @@ class Item(object):
   def get_item_level(self):
     return self.info["item_level"]
 
+# TODO: Add SP potions
+
 class MinorHealthPotion(Item):
   def __init__(self):
     super(MinorHealthPotion, self).__init__()

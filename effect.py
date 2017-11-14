@@ -1,11 +1,13 @@
 from equipment import STATS, DEFENSES
 
 STACK_MULTIPLY = ["XP Gain"] + STATS + DEFENSES
+STACK_MAX = ["Blinded"]
 
 class Effect(object):
 
   def __init__(self, duration):
     self.duration = duration
+    self.quantity = 0
 
   def pass_time(self, time_passed):
     self.duration -= time_passed
@@ -30,18 +32,27 @@ class Effect(object):
 
   @classmethod
   def get_combined_impact(cls, impact, buffs, debuffs):
-    combined_impact = 1.0
     if impact in STACK_MULTIPLY:
+      combined_impact = 1.0
       for effect in buffs + debuffs:
         impacts = effect.get_impacts()
         if impact in impacts:
           combined_impact *= impacts[impact]
+    elif impact in STACK_MAX:
+      combined_impact = 0.0
+      for effect in buffs + debuffs:
+        impacts = effect.get_impacts()
+        if impact in impacts:
+          combined_impact = max(impact, combined_impact)
     else:
       assert False
     return combined_impact
 
   def __str__(self):
-    return "%s: %d" % (self.get_name(), self.duration)
+    if self.quantity:
+      return "%s (%d): %d" % (self.get_name(), self.quantity, self.duration)
+    else:
+      return "%s: %d" % (self.get_name(), self.duration)
 
 class Buff(Effect):
   @classmethod
@@ -117,6 +128,22 @@ class Blessed(Buff):
 
   def get_name(self):
     return "Blessed"
+
+  def update(self, buff):
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      return True
+    else:
+      return False
+
+class Blinded(Debuff):
+  def get_impacts(self):
+    impacts = {}
+    impacts["Blinded"] = 1
+    return impacts
+
+  def get_name(self):
+    return "Blinded"
 
   def update(self, buff):
     if buff.get_name() == self.get_name():

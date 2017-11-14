@@ -37,7 +37,7 @@ DEBUG_GOLD = None
 
 # TODO: Add top floor state
 
-# START HERE: Add passive traits
+# TODO: Adding gaining skills on level up
 
 class GameState(object):
   """
@@ -121,6 +121,8 @@ class GameState(object):
       self.tower_update_ready = True
       logs.append("Tower ready for update.")
     self.character.pass_time(amount)
+    if self.monster:
+      self.monster.pass_time(amount)
 
   def current_state(self):
     """Return the current state."""
@@ -167,6 +169,15 @@ class GameState(object):
     elif current_state == "LEVEL_UP":
       return self.character.get_trait_choices()
       # Next: Handle the trait choice, then implement the traits
+    elif current_state == "USE_SKILL":
+      choices = [""] * (3 - len(self.character.skills))
+      for skill in self.character.skills:
+        if skill.sp_cost() > self.character.current_sp:
+          choices.append("")
+        else:
+          choices.append(skill.get_name())
+      choices.append("Never Mind")
+      return choices
     else:
       return ["Error", "Error", "Error", "Error"]
 
@@ -205,6 +216,7 @@ class GameState(object):
   def state_change_checks(self):
     if self.current_state() == "TOWN":
       self.character.restore_hp()
+      self.character.restore_sp()
     if self.current_state() == "OUTSIDE" or self.current_state == "TOWN":
       if self.tower_update_ready:
         self.tower_update()
@@ -331,6 +343,7 @@ class GameState(object):
         elif random_number < .025:
           logs.append("You find a shop")
           self.character.restore_hp()
+          self.character.restore_sp()
           shop = random.choice(TOWER_BUILDINGS)(self.floor)
           self.add_state("SHOP")
           self.current_shop = shop
@@ -408,6 +421,8 @@ class GameState(object):
   def apply_death(self, logs):
     # TODO: Clean this up. The code flow is messy
     self.leave_state()  # COMBAT
+    self.monster.buffs = []
+    self.monster.debuffs = []
     self.monster = None
     # TODO: This is hacky. Should probably have TOWER also be an add_state
     if self.current_state() == "QUEST":
@@ -430,31 +445,33 @@ class GameState(object):
       assert .992 <= multiplier < 1.0
       self.tower_faction[floor] *= multiplier
 
+  def handle_combat_result(self, logs, result):
+    if result == Combat.CHARACTER_DEAD:
+      self.apply_death(logs)
+    elif result == Combat.MONSTER_DEAD:
+      logs.append("You have defeated %s" % self.monster.name)
+      levelups = self.character.gain_exp(self.monster.calculate_exp(),
+                                         self.monster.level, logs)
+      self.treasure_queue = self.monster.get_treasure()
+      self.monster = None
+      self.leave_state()
+      if self.current_state() == "QUEST":
+        self.quest.defeat_monster()
+      if self.current_state() == "DUNGEON":
+        self.dungeon_victory_update(self.floor)
+      if levelups > 0:
+        self.levelups = levelups
+        self.add_state("LEVEL_UP")
+      self.handle_treasure(logs)
+
   def apply_choice_combat(self, logs, choice_text):
     if choice_text == "Attack":
       self.pass_time(1, logs)
       result = Combat.perform_turn("Attack", None, self.character, self.monster,
                                    logs)
-      if result == Combat.CHARACTER_DEAD:
-        self.apply_death(logs)
-      elif result == Combat.MONSTER_DEAD:
-        logs.append("You have defeated %s" % self.monster.name)
-        levelups = self.character.gain_exp(self.monster.calculate_exp(),
-                                           self.monster.level, logs)
-        self.treasure_queue = self.monster.get_treasure()
-        self.monster = None
-        self.leave_state()
-        if self.current_state() == "QUEST":
-          self.quest.defeat_monster()
-        if self.current_state() == "DUNGEON":
-          self.dungeon_victory_update(self.floor)
-        if levelups > 0:
-          self.levelups = levelups
-          self.add_state("LEVEL_UP")
-        self.handle_treasure(logs)
+      self.handle_combat_result(logs, result)
     elif choice_text == "Skill":
-      self.pass_time(1, logs)
-      logs.append("Not implemented yet")
+      self.add_state("USE_SKILL")
     elif choice_text == "Item":
       self.pass_time(0, logs)
       self.add_state("USE_ITEM")
@@ -470,6 +487,22 @@ class GameState(object):
         logs.append("You escaped successfully")
         self.monster = None
         self.leave_state()
+
+  def apply_choice_use_skill(self, logs, choice_text):
+    if choice_text == "Never Mind":
+      self.leave_state()
+    else:
+      for skill in self.character.skills:
+        if skill.get_name() == choice_text:
+          self.leave_state()  # USE_SKILL
+          self.pass_time(1, logs)
+          self.character.current_sp -= skill.sp_cost()
+          result = Combat.perform_turn("Skill", skill, self.character,
+                                       self.monster, logs)
+          self.handle_combat_result(logs, result)
+          break
+      else:
+        assert False
 
   def apply_choice_level_up(self, logs, choice_text):
     assert self.levelups > 0
@@ -593,6 +626,15 @@ class GameState(object):
         pieces.append("%s: %s" % (choice, TRAITS[choice]))
     return "\n".join(pieces)
 
+  def skill_select_text(self):
+    pieces = []
+    for skill in self.character.skills:
+      insufficient_sp = ("" if self.character.current_sp >= skill.sp_cost()
+                         else " (Insufficient SP)")
+      pieces.append("%s: %d sp%s\n%s" % (skill.get_name(), skill.sp_cost(),
+                                        insufficient_sp, 
+                                        skill.get_description()))
+    return "\n".join(pieces)
 
   def panel_text(self):
     """Return text to display to the player about the current game state."""
@@ -622,5 +664,7 @@ class GameState(object):
       return "Level %d Dungeon" % self.floor
     elif current_state == "LEVEL_UP":
       return self.trait_text()
+    elif current_state == "USE_SKILL":
+      return self.skill_select_text()
     else:
       return "Error, no text for state %s" % current_state
