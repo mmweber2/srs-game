@@ -188,7 +188,6 @@ class Stunned(Debuff):
       return False
 
 class LastStand(Buff):
-  # 100% increase to def / mdef
   def get_impacts(self):
     impacts = {}
     impacts["Immortal"] = 1
@@ -196,6 +195,40 @@ class LastStand(Buff):
 
   def get_name(self):
     return "Last Stand"
+
+  # TODO: Move these identical update functions somewhere?
+  def update(self, buff):
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      return True
+    else:
+      return False
+
+class Surge(Buff):
+  def get_impacts(self):
+    impacts = {}
+    impacts["Strength"] = 2.0
+    return impacts
+
+  def get_name(self):
+    return "Surge"
+
+  # TODO: Move these identical update functions somewhere?
+  def update(self, buff):
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      return True
+    else:
+      return False
+
+class Concentrate(Buff):
+  def get_impacts(self):
+    impacts = {}
+    impacts["Intellect"] = 2.0
+    return impacts
+
+  def get_name(self):
+    return "Concentrate"
 
   # TODO: Move these identical update functions somewhere?
   def update(self, buff):

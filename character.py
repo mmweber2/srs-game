@@ -31,7 +31,7 @@ TRAITS = {"Beefy!": "Increase physical damage",
 # -- Durable (Chance to resist debuffs)
 # -- OHKO resist (Chance to resist any attack that does more than Max HP)
 # -- C-c-c-combobreaker (Chance to prevent opponent getting multiple turns)
-# -- Libra (See monster stats)
+# -- Libra (See monster stats... with some percent chance? accuracy?)
 # TODO: General resist damage trait?
 
 class Character(object):
@@ -59,8 +59,7 @@ class Character(object):
     self.traits = collections.defaultdict(int)
     self.reroll_counter = 0
     # DEBUG
-    self.skills.append(skills.LastStand(5))
-    self.stats["Intellect"] = 1000
+    self.skills.append(skills.Concentrate(5))
 
   def add_item(self, item):
     if len(self.items) >= 3:
