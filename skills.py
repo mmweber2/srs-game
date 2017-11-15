@@ -8,14 +8,11 @@ SKILLS = {
           "Drain": "Perform an attack, absorb a percentage of the damage as HP",
           "Final Strike": "Convert HP/MP to one massive attack",
           "Heal": "Restore HP",
+          "Full Heal": "Restore all HP",
           "Renew": "Restore HP each turn",
           "Chain Lightning": "Do magical damage, chance to repeat",
-          "Full Heal": "Restore all HP",
           "Auto-Life": "Add a buff that restores HP on fatal damage",
           "Meditate": "Restore MP. May fail depending on current MP",
-          "Poisoned Blade": "Chance to auto-kill non-bosses",
-          "Cannibalize": "Convert own HP into MP",
-          "Bulk Up": "Increase max HP for the battle",
           # TODO: A few more interesting magical attacks
           # Force bolt?
           # Libra as a buff?
@@ -199,4 +196,59 @@ class Swiftness(Skill):
     actor.add_buff(effect.Swiftness(self.buff_duration()))
     return Combat.TARGET_ALIVE
 
-SKILLS = [QuickAttack, Blind, Bash, Protection, HeavySwing, LastStand, Surge]
+class BulkUp(Skill):
+  def get_name(self):
+    return "Bulk Up"
+  def buff_duration(self):
+    return 5 + (5 * self.level)
+  def get_description(self):
+    return "Stamina up by 100%% for %d time" % self.buff_duration()
+  def sp_cost(self):
+    return self.level * 3
+  def apply_skill(self, actor, opponent, logs):
+    actor.add_buff(effect.BulkUp(self.buff_duration()))
+    return Combat.TARGET_ALIVE
+
+class Cannibalize(Skill):
+  def get_name(self):
+    return "Cannibalize"
+  def percent_converted(self):
+    return 3 + self.level
+  def get_description(self):
+    desc = "Convert up to %d%% of max HP into half as many SP"
+    return desc % self.percent_converted()
+  def sp_cost(self):
+    return 0
+  def apply_skill(self, actor, opponent, logs):
+    hp_to_convert = actor.max_hp * self.percent_converted() / 100
+    hp_to_convert = min(hp_to_convert, actor.current_hp - 1)
+    sp_gained = hp_to_convert / 2
+    actor.current_hp -= hp_to_convert
+    sp_gained = actor.restore_sp(sp_gained)
+    logs.append("Converted %d HP into %d SP" % (hp_to_convert, sp_gained))
+    return Combat.TARGET_ALIVE
+
+class PoisonedBlade(Skill):
+  def get_name(self):
+    return "Poisoned Blade"
+  def get_attack_multiple(self):
+    return 1.0 + 0.1 * self.level
+  def kill_chance(self):
+    return 0.05 + (0.02 * self.level)
+  def get_description(self):
+    desc = "Physical attack with %.2f multiplier, %d%% chance to auto-kill."
+    desc = desc % (self.get_attack_multiple(), (self.kill_chance() * 100))
+    return desc
+  def sp_cost(self):
+    return self.level * 2
+  def apply_skill(self, actor, opponent, logs):
+    if random.random() < self.kill_chance() and not opponent.boss:
+      logs.append("Assassinated!")
+      return Combat.TARGET_DEAD
+    else:
+      result = Combat.action_attack(None, actor, opponent, logs, "Physical",
+                                    self.get_attack_multiple())
+      return result
+
+SKILLS = [QuickAttack, Blind, Bash, Protection, HeavySwing, LastStand, Surge,
+          Concentrate, Swiftness, BulkUp, Cannibalize, PoisonedBlade]

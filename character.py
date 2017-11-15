@@ -59,7 +59,8 @@ class Character(object):
     self.traits = collections.defaultdict(int)
     self.reroll_counter = 0
     # DEBUG
-    self.skills.append(skills.Swiftness(5))
+    self.skills.append(skills.PoisonedBlade(25))
+    self.stats["Intellect"] = 1000
 
   def add_item(self, item):
     if len(self.items) >= 3:
@@ -138,7 +139,7 @@ class Character(object):
       pieces.append("None")
     else:
       for skill in self.skills:
-        pieces.append("%s: %d" % (skill.get_name(), skill.level))
+        pieces.append("%s: %d  " % (skill.get_name(), skill.level))
     pieces.append("\n")
     pieces.append("Materials: ")
     if sum(self.materials) == 0:

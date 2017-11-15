@@ -185,3 +185,12 @@ class Swiftness(Buff):
   def get_name(self):
     return "Swiftness"
 
+class BulkUp(Buff):
+  def get_impacts(self):
+    impacts = {}
+    impacts["Stamina"] = 2.0
+    return impacts
+
+  def get_name(self):
+    return "Bulk Up"
+
