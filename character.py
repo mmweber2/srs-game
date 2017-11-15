@@ -59,7 +59,8 @@ class Character(object):
     self.traits = collections.defaultdict(int)
     self.reroll_counter = 0
     # DEBUG
-    self.skills.append(skills.Blind(5))
+    self.skills.append(skills.LastStand(5))
+    self.stats["Intellect"] = 1000
 
   def add_item(self, item):
     if len(self.items) >= 3:

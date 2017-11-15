@@ -36,6 +36,7 @@ class Monster(object):
     # DEBUG
     self.max_hp = 10000
     self.current_hp = self.max_hp
+    self.stats["Speed"] = 100
     # TODO: Name generation
     if boss:
       self.name = "Boss Monster, Level %d" % level

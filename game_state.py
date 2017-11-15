@@ -75,6 +75,7 @@ class GameState(object):
     self.current_shop = None
     self.rune_level = -1
     self.levelups = 0
+    self.skills_used = set()
 
   ###
   # Helper methods for changing state
@@ -172,7 +173,8 @@ class GameState(object):
     elif current_state == "USE_SKILL":
       choices = [""] * (3 - len(self.character.skills))
       for skill in self.character.skills:
-        if skill.sp_cost() > self.character.current_sp:
+        if (skill.sp_cost() > self.character.current_sp or
+            (skill.once_per_battle() and skill.get_name() in self.skills_used)):
           choices.append("")
         else:
           choices.append(skill.get_name())
@@ -423,6 +425,7 @@ class GameState(object):
     self.leave_state()  # COMBAT
     self.monster.buffs = []
     self.monster.debuffs = []
+    self.skills_used = set()
     self.monster = None
     # TODO: This is hacky. Should probably have TOWER also be an add_state
     if self.current_state() == "QUEST":
@@ -449,6 +452,7 @@ class GameState(object):
     if result == Combat.CHARACTER_DEAD:
       self.apply_death(logs)
     elif result == Combat.MONSTER_DEAD:
+      self.skills_used = set()
       logs.append("You have defeated %s" % self.monster.name)
       levelups = self.character.gain_exp(self.monster.calculate_exp(),
                                          self.monster.level, logs)
@@ -466,9 +470,9 @@ class GameState(object):
 
   def apply_choice_combat(self, logs, choice_text):
     if choice_text == "Attack":
-      self.pass_time(1, logs)
       result = Combat.perform_turn("Attack", None, self.character, self.monster,
                                    logs)
+      self.pass_time(1, logs)
       self.handle_combat_result(logs, result)
     elif choice_text == "Skill":
       self.add_state("USE_SKILL")
@@ -476,10 +480,10 @@ class GameState(object):
       self.pass_time(0, logs)
       self.add_state("USE_ITEM")
     elif choice_text == "Escape":
-      self.pass_time(1, logs)
       logs.append("You attempt to escape...")
       result = Combat.perform_turn("Escape", None, self.character, self.monster,
                                    logs)
+      self.pass_time(1, logs)
       # TODO: Maybe monster can die in this case (eventually DoTs)
       if result == Combat.CHARACTER_DEAD:
         self.apply_death(logs)
@@ -495,10 +499,11 @@ class GameState(object):
       for skill in self.character.skills:
         if skill.get_name() == choice_text:
           self.leave_state()  # USE_SKILL
-          self.pass_time(1, logs)
           self.character.current_sp -= skill.sp_cost()
           result = Combat.perform_turn("Skill", skill, self.character,
                                        self.monster, logs)
+          self.pass_time(1, logs)
+          self.skills_used.add(choice_text)
           self.handle_combat_result(logs, result)
           break
       else:
@@ -631,8 +636,12 @@ class GameState(object):
     for skill in self.character.skills:
       insufficient_sp = ("" if self.character.current_sp >= skill.sp_cost()
                          else " (Insufficient SP)")
-      pieces.append("%s: %d sp%s\n%s" % (skill.get_name(), skill.sp_cost(),
-                                        insufficient_sp, 
+      if skill.once_per_battle() and skill.get_name() in self.skills_used:
+        already_used = "(Already Used)"
+      else:
+        already_used = ""
+      pieces.append("%s: %d sp %s%s\n%s" % (skill.get_name(), skill.sp_cost(),
+                                        insufficient_sp, already_used,
                                         skill.get_description()))
     return "\n".join(pieces)
 

@@ -1,7 +1,7 @@
 from equipment import STATS, DEFENSES
 
 STACK_MULTIPLY = ["XP Gain"] + STATS + DEFENSES
-STACK_MAX = ["Blinded"]
+STACK_MAX = ["Blinded", "Stunned", "Immortal"]
 
 class Effect(object):
 
@@ -136,6 +136,25 @@ class Blessed(Buff):
     else:
       return False
 
+class Protection(Buff):
+  # 100% increase to def / mdef
+  def get_impacts(self):
+    impacts = {}
+    for stat in DEFENSES:
+      impacts[stat] = 2.00
+    return impacts
+
+  def get_name(self):
+    return "Protection"
+
+  # TODO: Move these identical update functions somewhere?
+  def update(self, buff):
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      return True
+    else:
+      return False
+
 class Blinded(Debuff):
   def get_impacts(self):
     impacts = {}
@@ -145,6 +164,40 @@ class Blinded(Debuff):
   def get_name(self):
     return "Blinded"
 
+  def update(self, buff):
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      return True
+    else:
+      return False
+
+class Stunned(Debuff):
+  def get_impacts(self):
+    impacts = {}
+    impacts["Stunned"] = 1
+    return impacts
+
+  def get_name(self):
+    return "Stunned"
+
+  def update(self, buff):
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      return True
+    else:
+      return False
+
+class LastStand(Buff):
+  # 100% increase to def / mdef
+  def get_impacts(self):
+    impacts = {}
+    impacts["Immortal"] = 1
+    return impacts
+
+  def get_name(self):
+    return "Last Stand"
+
+  # TODO: Move these identical update functions somewhere?
   def update(self, buff):
     if buff.get_name() == self.get_name():
       self.duration = max(self.duration, buff.duration)

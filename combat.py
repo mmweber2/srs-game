@@ -31,15 +31,24 @@ class Combat(object):
       next_turn = cls.get_next_actor(character, monster)
 
     while next_turn == cls.MONSTER_TURN:
+      if Effect.get_combined_impact("Stunned", monster.buffs, 
+                                    monster.debuffs) > 0:
+        logs.append("%s is stunned" % monster.name)
+        return cls.CHARACTER_TURN
       action, info = monster.get_action(character)
       result = cls.perform_action(action, info, monster, character, logs)
       if result == cls.TARGET_DEAD:
-        death_chance = 0.95 ** character.traits["Perseverance"]
-        if random.random() < death_chance:
-          return cls.CHARACTER_DEAD
-        else:
-          logs.append("Your perseverance saved you from death.")
+        if Effect.get_combined_impact("Immortal", character.buffs,
+                                      character.debuffs) > 0:
+          logs.append("You survive due to Last Stand")
           character.current_hp = 1
+        else:
+          death_chance = 0.95 ** character.traits["Perseverance"]
+          if random.random() < death_chance:
+            return cls.CHARACTER_DEAD
+          else:
+            logs.append("Your perseverance saved you from death.")
+            character.current_hp = 1
       elif result == cls.ACTOR_ESCAPED:
         return cls.MONSTER_ESCAPED
       next_turn = cls.get_next_actor(character, monster)
