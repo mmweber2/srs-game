@@ -59,8 +59,10 @@ class Character(object):
     self.traits = collections.defaultdict(int)
     self.reroll_counter = 0
     # DEBUG
-    self.skills.append(skills.PoisonedBlade(25))
-    self.stats["Intellect"] = 1000
+    self.skills.append(skills.PoisonedBlade(5))
+    self.skills.append(skills.Meditate(5))
+    self.stats["Intellect"] = 100
+    self.stats["Stamina"] = 1000
 
   def add_item(self, item):
     if len(self.items) >= 3:
@@ -153,12 +155,6 @@ class Character(object):
     pieces.append("Buffs: ")
     pieces.append(", ".join(str(buff) for buff in self.buffs))
     if self.buffs:
-      pieces.append("\n")
-    else:
-      pieces.append("None\n")
-    pieces.append("Debuffs: ")
-    pieces.append(", ".join(str(debuff) for debuff in self.debuffs))
-    if self.debuffs:
       pieces.append("\n")
     else:
       pieces.append("None\n")

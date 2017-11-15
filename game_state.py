@@ -39,6 +39,9 @@ DEBUG_GOLD = None
 
 # TODO: Adding gaining skills on level up
 
+# TODO: Add an "acknowledgement" state, to make certain uncommon states harder
+#       to skip past (levelling up, finding a shop in a tower, etc)
+
 class GameState(object):
   """
     GameState represents all the state for the current game, and functions for
@@ -641,8 +644,8 @@ class GameState(object):
       else:
         already_used = ""
       pieces.append("%s: %d sp %s%s\n%s" % (skill.get_name(), skill.sp_cost(),
-                                        insufficient_sp, already_used,
-                                        skill.get_description()))
+                                            insufficient_sp, already_used,
+                                            skill.get_description()))
     return "\n".join(pieces)
 
   def panel_text(self):

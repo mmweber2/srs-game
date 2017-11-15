@@ -68,7 +68,6 @@ class Monster(object):
     pieces = []
     pieces.append("Name: %s\n" % self.name)
     pieces.append("HP: %s\n" % self.hp_string())
-    pieces.append("Buffs: None\n")
     pieces.append("Debuffs: ")
     pieces.append(", ".join(str(debuff) for debuff in self.debuffs))
     if self.debuffs:

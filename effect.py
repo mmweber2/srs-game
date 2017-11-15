@@ -193,4 +193,3 @@ class BulkUp(Buff):
 
   def get_name(self):
     return "Bulk Up"
-

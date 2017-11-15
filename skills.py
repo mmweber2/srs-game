@@ -1,9 +1,8 @@
-from combat import Combat
 import random
+from combat import Combat
 import effect
 
-SKILLS = {
-          "Withering Attack": "Chance to inflict stacks of wither",
+SKILLS = {"Withering Attack": "Chance to inflict stacks of wither",
           "Bubble": "Create a barrier that absorbs damage",
           "Drain": "Perform an attack, absorb a percentage of the damage as HP",
           "Final Strike": "Convert HP/MP to one massive attack",
@@ -12,11 +11,10 @@ SKILLS = {
           "Renew": "Restore HP each turn",
           "Chain Lightning": "Do magical damage, chance to repeat",
           "Auto-Life": "Add a buff that restores HP on fatal damage",
-          "Meditate": "Restore MP. May fail depending on current MP",
-          # TODO: A few more interesting magical attacks
-          # Force bolt?
-          # Libra as a buff?
          }
+# TODO: A few more interesting magical attacks
+# Force bolt?
+# Libra as a buff?
 
 class Skill(object):
   def __init__(self, level=1):
@@ -156,7 +154,7 @@ class LastStand(Skill):
   def apply_skill(self, actor, opponent, logs):
     logs.append("%s takes a Last Stand" % actor.name)
     actor.add_buff(effect.LastStand(self.duration()))
-          
+
 class Surge(Skill):
   def get_name(self):
     return "Surge"
@@ -169,7 +167,7 @@ class Surge(Skill):
   def apply_skill(self, actor, opponent, logs):
     actor.add_buff(effect.Surge(self.buff_duration()))
     return Combat.TARGET_ALIVE
-    
+
 class Concentrate(Skill):
   def get_name(self):
     return "Concentrate"
@@ -249,6 +247,25 @@ class PoisonedBlade(Skill):
       result = Combat.action_attack(None, actor, opponent, logs, "Physical",
                                     self.get_attack_multiple())
       return result
+
+class Meditate(Skill):
+  def get_name(self):
+    return "Meditate"
+  def percent_gained(self):
+    return 8 + self.level * 2
+  def get_description(self):
+    desc = "Gain %d%% of max SP. Chance to fail based on current SP."
+    return desc % self.percent_gained()
+  def sp_cost(self):
+    return 0
+  def apply_skill(self, actor, opponent, logs):
+    chance_to_fail = (actor.current_sp / float(actor.max_sp)) * 2.0
+    if random.random() > chance_to_fail:
+      sp_gained = actor.restore_sp(actor.max_sp * self.percent_gained() / 100)
+      logs.append("%d SP gained" % sp_gained)
+    else:
+      logs.append("Meditation failed")
+    return Combat.TARGET_ALIVE
 
 SKILLS = [QuickAttack, Blind, Bash, Protection, HeavySwing, LastStand, Surge,
           Concentrate, Swiftness, BulkUp, Cannibalize, PoisonedBlade]

@@ -31,7 +31,7 @@ class Combat(object):
       next_turn = cls.get_next_actor(character, monster)
 
     while next_turn == cls.MONSTER_TURN:
-      if Effect.get_combined_impact("Stunned", monster.buffs, 
+      if Effect.get_combined_impact("Stunned", monster.buffs,
                                     monster.debuffs) > 0:
         logs.append("%s is stunned" % monster.name)
         return cls.CHARACTER_TURN
