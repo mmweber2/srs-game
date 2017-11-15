@@ -5,7 +5,6 @@ import effect
 SKILLS = {
           "Withering Attack": "Chance to inflict stacks of wither",
           "Bubble": "Create a barrier that absorbs damage",
-          "Swiftness": "Gain speed buff",
           "Drain": "Perform an attack, absorb a percentage of the damage as HP",
           "Final Strike": "Convert HP/MP to one massive attack",
           "Heal": "Restore HP",
@@ -185,6 +184,19 @@ class Concentrate(Skill):
     return self.level * 3
   def apply_skill(self, actor, opponent, logs):
     actor.add_buff(effect.Concentrate(self.buff_duration()))
+    return Combat.TARGET_ALIVE
+
+class Swiftness(Skill):
+  def get_name(self):
+    return "Swiftness"
+  def buff_duration(self):
+    return 5 + (5 * self.level)
+  def get_description(self):
+    return "Speed up by 100%% for %d time" % self.buff_duration()
+  def sp_cost(self):
+    return self.level * 4
+  def apply_skill(self, actor, opponent, logs):
+    actor.add_buff(effect.Swiftness(self.buff_duration()))
     return Combat.TARGET_ALIVE
 
 SKILLS = [QuickAttack, Blind, Bash, Protection, HeavySwing, LastStand, Surge]

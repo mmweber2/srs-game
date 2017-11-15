@@ -29,6 +29,11 @@ class Effect(object):
     """Returns True if buff is the same kind, False otherwise."""
     # Update the duration and effects of this buff, using the new buff.
     assert not self.stackable()
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      return True
+    else:
+      return False
 
   @classmethod
   def get_combined_impact(cls, impact, buffs, debuffs):
@@ -92,13 +97,6 @@ class WellRested(Buff):
   def get_name(self):
     return "Well Rested"
 
-  def update(self, buff):
-    if buff.get_name() == self.get_name():
-      self.duration = max(self.duration, buff.duration)
-      return True
-    else:
-      return False
-
 class WellFed(Buff):
   # +10% xp, +5% stats
   def get_impacts(self):
@@ -111,13 +109,6 @@ class WellFed(Buff):
   def get_name(self):
     return "Well Fed"
 
-  def update(self, buff):
-    if buff.get_name() == self.get_name():
-      self.duration = max(self.duration, buff.duration)
-      return True
-    else:
-      return False
-
 class Blessed(Buff):
   # +10% stats and defenses
   def get_impacts(self):
@@ -128,13 +119,6 @@ class Blessed(Buff):
 
   def get_name(self):
     return "Blessed"
-
-  def update(self, buff):
-    if buff.get_name() == self.get_name():
-      self.duration = max(self.duration, buff.duration)
-      return True
-    else:
-      return False
 
 class Protection(Buff):
   # 100% increase to def / mdef
@@ -147,14 +131,6 @@ class Protection(Buff):
   def get_name(self):
     return "Protection"
 
-  # TODO: Move these identical update functions somewhere?
-  def update(self, buff):
-    if buff.get_name() == self.get_name():
-      self.duration = max(self.duration, buff.duration)
-      return True
-    else:
-      return False
-
 class Blinded(Debuff):
   def get_impacts(self):
     impacts = {}
@@ -163,13 +139,6 @@ class Blinded(Debuff):
 
   def get_name(self):
     return "Blinded"
-
-  def update(self, buff):
-    if buff.get_name() == self.get_name():
-      self.duration = max(self.duration, buff.duration)
-      return True
-    else:
-      return False
 
 class Stunned(Debuff):
   def get_impacts(self):
@@ -180,13 +149,6 @@ class Stunned(Debuff):
   def get_name(self):
     return "Stunned"
 
-  def update(self, buff):
-    if buff.get_name() == self.get_name():
-      self.duration = max(self.duration, buff.duration)
-      return True
-    else:
-      return False
-
 class LastStand(Buff):
   def get_impacts(self):
     impacts = {}
@@ -195,14 +157,6 @@ class LastStand(Buff):
 
   def get_name(self):
     return "Last Stand"
-
-  # TODO: Move these identical update functions somewhere?
-  def update(self, buff):
-    if buff.get_name() == self.get_name():
-      self.duration = max(self.duration, buff.duration)
-      return True
-    else:
-      return False
 
 class Surge(Buff):
   def get_impacts(self):
@@ -213,14 +167,6 @@ class Surge(Buff):
   def get_name(self):
     return "Surge"
 
-  # TODO: Move these identical update functions somewhere?
-  def update(self, buff):
-    if buff.get_name() == self.get_name():
-      self.duration = max(self.duration, buff.duration)
-      return True
-    else:
-      return False
-
 class Concentrate(Buff):
   def get_impacts(self):
     impacts = {}
@@ -230,10 +176,12 @@ class Concentrate(Buff):
   def get_name(self):
     return "Concentrate"
 
-  # TODO: Move these identical update functions somewhere?
-  def update(self, buff):
-    if buff.get_name() == self.get_name():
-      self.duration = max(self.duration, buff.duration)
-      return True
-    else:
-      return False
+class Swiftness(Buff):
+  def get_impacts(self):
+    impacts = {}
+    impacts["Speed"] = 2.0
+    return impacts
+
+  def get_name(self):
+    return "Swiftness"
+
