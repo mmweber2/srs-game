@@ -2,6 +2,7 @@ from equipment import STATS, DEFENSES
 
 STACK_MULTIPLY = ["XP Gain"] + STATS + DEFENSES
 STACK_MAX = ["Blinded", "Stunned", "Immortal"]
+STACK_ADD = ["HP Restore"]
 
 class Effect(object):
 
@@ -24,6 +25,9 @@ class Effect(object):
 
   def get_impacts(self):
     pass
+
+  def turn_by_turn(self):
+    return False
 
   def update(self, buff):
     """Returns True if buff is the same kind, False otherwise."""
@@ -48,7 +52,13 @@ class Effect(object):
       for effect in buffs + debuffs:
         impacts = effect.get_impacts()
         if impact in impacts:
-          combined_impact = max(impact, combined_impact)
+          combined_impact = max(impacts[impact], combined_impact)
+    elif impact in STACK_ADD:
+      combined_impact = 0.0
+      for effect in buffs + debuffs:
+        impacts = effect.get_impacts()
+        if impact in impacts:
+          combined_impact += impacts[impact]
     else:
       assert False
     return combined_impact
@@ -220,6 +230,38 @@ class Wither(Debuff):
     if buff.get_name() == self.get_name():
       self.duration = max(self.duration, buff.duration)
       self.quantity += buff.quantity
+      return True
+    else:
+      return False
+      
+class Renew(Debuff):
+  def __init__(self, duration, quantity):
+    self.duration = duration
+    self.quantity = quantity
+
+  @classmethod
+  def stackable(cls):
+    return False
+
+  def get_name(self):
+    return "Renew"
+
+  def get_impacts(self):
+    impacts = {}
+    impacts["HP Restore"] = self.quantity
+    return impacts
+
+  def turn_by_turn(self):
+    return True
+
+  def update(self, buff):
+    """Returns True if buff is the same kind, False otherwise."""
+    # Update the duration and effects of this buff, using the new buff.
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      # TODO: This allows casting a strong version of the buff, then refreshing
+      #       it with a weaker version. Should we allow that?
+      self.quantity = max(self.quantity, buff.quantity)
       return True
     else:
       return False

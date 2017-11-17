@@ -3,7 +3,6 @@ from combat import Combat
 import effect
 
 SKILLS = {
-          "Renew": "Restore HP each turn",
           "Auto-Life": "Add a buff that restores HP on fatal damage",
          }
 # TODO: A few more interesting magical attacks
@@ -272,7 +271,7 @@ class Heal(Skill):
     return 4 * self.level
   def apply_skill(self, actor, opponent, logs):
     effective_int = actor.get_effective_stat("Intellect")
-    hp_gained = self.base_hp_gain() * ((effective_int / 50.0) ** .5)
+    hp_gained = int(self.base_hp_gain() * ((effective_int / 50.0) ** .5))
     actor.restore_hp(hp_gained)
     logs.append("Restored %d HP" % hp_gained)
     return Combat.TARGET_ALIVE
@@ -356,6 +355,24 @@ class FinalStrike(Skill):
     actor.current_sp = 0
     actor.current_hp = 1
     return result
+
+class Renew(Skill):
+  def get_name(self):
+    return "Renew"
+  def base_hp_gain(self):
+    return (200 * self.level) / 10
+  def buff_duration(self):
+    return 9 + self.level
+  def get_description(self):
+    return "Gain %d HP/turn (base) for %d turns." % (self.base_hp_gain(),
+                                                     self.buff_duration())                                               
+  def sp_cost(self):
+    return 3 * self.level
+  def apply_skill(self, actor, opponent, logs):
+    effective_int = actor.get_effective_stat("Intellect")
+    buff_strength = int(self.base_hp_gain() * ((effective_int / 50.0) ** .5))
+    actor.add_buff(effect.Renew(self.buff_duration(), buff_strength))
+    return Combat.TARGET_ALIVE
 
 SKILLS = [QuickAttack, Blind, Bash, Protection, HeavySwing, LastStand, Surge,
           Concentrate, Swiftness, BulkUp, Cannibalize, PoisonedBlade,

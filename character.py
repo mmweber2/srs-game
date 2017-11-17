@@ -59,9 +59,7 @@ class Character(object):
     self.traits = collections.defaultdict(int)
     self.reroll_counter = 0
     # DEBUG
-    self.skills.append(skills.FinalStrike(5))
-    self.skills.append(skills.Wither(5))
-    self.skills.append(skills.Heal(5))
+    self.skills.append(skills.Renew(5))
     self.stats["Intellect"] = 100
     self.stats["Stamina"] = 1000
 
@@ -86,7 +84,16 @@ class Character(object):
   def pass_time(self, time_passed):
     remaining_buffs = []
     for buff in self.buffs:
-      buff.pass_time(time_passed)
+      if buff.turn_by_turn():
+        for _ in range(time_passed):
+          buff.pass_time(1)
+          effect = Effect.get_combined_impact("HP Restore", self.buffs,
+                                              self.debuffs)
+          self.restore_hp(effect)
+          if not buff.active():
+            break
+      else:
+        buff.pass_time(time_passed)
       if buff.active():
         remaining_buffs.append(buff)
     self.buffs = remaining_buffs
