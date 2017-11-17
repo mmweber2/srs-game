@@ -222,7 +222,6 @@ class Wither(Debuff):
     for stat in STATS + DEFENSES:
       impacts[stat] = impact
     return impacts
-    pass
 
   def update(self, buff):
     """Returns True if buff is the same kind, False otherwise."""
@@ -233,7 +232,7 @@ class Wither(Debuff):
       return True
     else:
       return False
-      
+
 class Renew(Debuff):
   def __init__(self, duration, quantity):
     self.duration = duration
@@ -265,7 +264,7 @@ class Renew(Debuff):
       return True
     else:
       return False
-      
+
 class AutoLife(Debuff):
   def __init__(self, duration, quantity):
     self.duration = duration

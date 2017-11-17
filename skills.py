@@ -2,8 +2,6 @@ import random
 from combat import Combat
 import effect
 
-SKILLS = {
-         }
 # TODO: A few more interesting magical attacks
 # Force bolt?
 # Libra as a buff?
@@ -290,7 +288,7 @@ class Drain(Skill):
     effective_int = actor.get_effective_stat("Intellect")
     hp_gained = int(effective_int * self.get_attack_multiple() / 2)
     result = Combat.action_attack(None, actor, opponent, logs, "Magic",
-                                    self.get_attack_multiple())
+                                  self.get_attack_multiple())
     actor.restore_hp(hp_gained)
     logs.append("Gained %d HP" % hp_gained)
     return result
@@ -310,7 +308,7 @@ class Wither(Skill):
     return self.level * 3
   def apply_skill(self, actor, opponent, logs):
     result = Combat.action_attack(None, actor, opponent, logs, "Magic",
-                                    self.get_attack_multiple())
+                                  self.get_attack_multiple())
     opponent.add_debuff(effect.Wither(10, self.get_wither_stacks()))
     return result
 
@@ -330,7 +328,7 @@ class ChainLightning(Skill):
   def apply_skill(self, actor, opponent, logs):
     repeat_chance = self.get_repeat_chance()
     result = Combat.action_attack(None, actor, opponent, logs, "Magic",
-                                    self.get_attack_multiple())
+                                  self.get_attack_multiple())
     while result == Combat.TARGET_ALIVE and random.random() < repeat_chance:
       repeat_chance *= .9
       result = Combat.action_attack(None, actor, opponent, logs, "Magic",
@@ -364,7 +362,7 @@ class Renew(Skill):
     return 9 + self.level
   def get_description(self):
     return "Gain %d HP/turn (base) for %d turns." % (self.base_hp_gain(),
-                                                     self.buff_duration())                                               
+                                                     self.buff_duration())
   def sp_cost(self):
     return 3 * self.level
   def apply_skill(self, actor, opponent, logs):

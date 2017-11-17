@@ -7,7 +7,6 @@ from equipment import Equipment
 from quest import Quest
 import rooms
 from items import Item
-from skills import SKILL_NAMES
 
 TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                   rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
@@ -47,6 +46,8 @@ DEBUG_GOLD = None
 
 # TODO: Add some more extensive logging that gets written to disk in case
 #       something fails. Maybe we can do a replay of sorts
+
+# TODO: Add bosses for each level / each 5 levels / whatever
 
 class GameState(object):
   """
@@ -652,7 +653,7 @@ class GameState(object):
       if choice in TRAITS:
         pieces.append("%s: %s" % (choice, TRAITS[choice]))
     return "\n".join(pieces)
-      
+
   def skill_text(self):
     pieces = []
     pieces.append("Select a skill")
