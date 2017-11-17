@@ -7,6 +7,7 @@ from equipment import Equipment
 from quest import Quest
 import rooms
 from items import Item
+from skills import SKILL_NAMES
 
 TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                   rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
@@ -36,11 +37,16 @@ DEBUG_GOLD = None
 #       it could be part of the GameState, or we could use a logger for real
 
 # TODO: Add top floor state
-
-# TODO: Adding gaining skills on level up
+#       Add ending
+#       To help debug these, make a Character function that gives a character
+#       of a given level with random traits/skills/etc, and then gives it
+#       Equipment
 
 # TODO: Add an "acknowledgement" state, to make certain uncommon states harder
 #       to skip past (levelling up, finding a shop in a tower, etc)
+
+# TODO: Add some more extensive logging that gets written to disk in case
+#       something fails. Maybe we can do a replay of sorts
 
 class GameState(object):
   """
@@ -78,6 +84,7 @@ class GameState(object):
     self.current_shop = None
     self.rune_level = -1
     self.levelups = 0
+    self.skillups = 0
     self.skills_used = set()
 
   ###
@@ -172,6 +179,8 @@ class GameState(object):
       return choices
     elif current_state == "LEVEL_UP":
       return self.character.get_trait_choices()
+    elif current_state == "LEVEL_UP_SKILL":
+      return self.character.get_skill_choices()
       # Next: Handle the trait choice, then implement the traits
     elif current_state == "USE_SKILL":
       choices = [""] * (3 - len(self.character.skills))
@@ -332,6 +341,7 @@ class GameState(object):
           self.tower_quests[self.floor] = None
       if levelups > 0:
         self.levelups = levelups
+        self.skillups = levelups
         self.add_state("LEVEL_UP")
       self.handle_treasure(logs)
 
@@ -468,6 +478,7 @@ class GameState(object):
         self.dungeon_victory_update(self.floor)
       if levelups > 0:
         self.levelups = levelups
+        self.skillups = levelups
         self.add_state("LEVEL_UP")
       self.handle_treasure(logs)
 
@@ -518,6 +529,14 @@ class GameState(object):
     if learned:
       self.levelups -= 1
       if self.levelups == 0:
+        self.change_state("LEVEL_UP_SKILL")
+
+  def apply_choice_level_up_skill(self, logs, choice_text):
+    assert self.skillups > 0
+    learned = self.character.learn_skill(choice_text)
+    if learned:
+      self.skillups -= 1
+      if self.skillups == 0:
         self.leave_state()
 
   def apply_choice_town(self, logs, choice_text):
@@ -633,6 +652,12 @@ class GameState(object):
       if choice in TRAITS:
         pieces.append("%s: %s" % (choice, TRAITS[choice]))
     return "\n".join(pieces)
+      
+  def skill_text(self):
+    pieces = []
+    pieces.append("Select a skill")
+    pieces.extend(self.get_choices())
+    return "\n".join(pieces)
 
   def skill_select_text(self):
     pieces = []
@@ -676,6 +701,8 @@ class GameState(object):
       return "Level %d Dungeon" % self.floor
     elif current_state == "LEVEL_UP":
       return self.trait_text()
+    elif current_state == "LEVEL_UP_SKILL":
+      return self.skill_text()
     elif current_state == "USE_SKILL":
       return self.skill_select_text()
     else:

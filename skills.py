@@ -3,7 +3,6 @@ from combat import Combat
 import effect
 
 SKILLS = {
-          "Auto-Life": "Add a buff that restores HP on fatal damage",
          }
 # TODO: A few more interesting magical attacks
 # Force bolt?
@@ -374,6 +373,23 @@ class Renew(Skill):
     actor.add_buff(effect.Renew(self.buff_duration(), buff_strength))
     return Combat.TARGET_ALIVE
 
+class AutoLife(Skill):
+  def get_name(self):
+    return "Auto Life"
+  def hp_gain(self):
+    return 300 * self.level
+  def buff_duration(self):
+    return 20
+  def get_description(self):
+    return "Buff that restores %d HP on death once." % self.hp_gain()
+  def sp_cost(self):
+    return 10 * self.level
+  def apply_skill(self, actor, opponent, logs):
+    actor.add_buff(effect.AutoLife(self.buff_duration(), self.hp_gain()))
+    return Combat.TARGET_ALIVE
+
 SKILLS = [QuickAttack, Blind, Bash, Protection, HeavySwing, LastStand, Surge,
           Concentrate, Swiftness, BulkUp, Cannibalize, PoisonedBlade,
-          Meditate, Heal, Drain, Wither, ChainLightning, FinalStrike]
+          Meditate, Heal, Drain, Wither, ChainLightning, FinalStrike, Renew,
+          AutoLife]
+SKILL_NAMES = [skill().get_name() for skill in SKILLS]

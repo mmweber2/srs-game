@@ -33,10 +33,7 @@ class Monster(object):
       self.stats[stat] = int(self.stats[stat])
       self.stats[stat] = max(1, self.stats[stat])
     self.max_hp = self.stats["Stamina"] * 5
-    # DEBUG
-    self.max_hp = 10000
     self.current_hp = self.max_hp
-    self.stats["Speed"] = 100
     # TODO: Name generation
     if boss:
       self.name = "Boss Monster, Level %d" % level

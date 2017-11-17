@@ -1,6 +1,6 @@
 import random
 import collections
-import skills
+from skills import SKILLS, SKILL_NAMES
 from equipment import Equipment, RARITY
 from effect import Effect, Buff, Debuff
 
@@ -10,7 +10,7 @@ STAT_ORDER = ["Strength", "Intellect", "Speed", "Stamina", "Defense",
 TRAITS = {"Beefy!": "Increase physical damage",
           "Wizardry": "Increase magical damage",
           "Perseverance": "Chance to survive fatal attacks in combat",
-          # "Scholar": "On level up, chance to choose new skills",
+          "Scholar": "On level up, chance to choose new skills",
           "Self-Improvement": "On level up, chance to choose new passives",
           "Quick Learner": "Improved experience gain",
           "Merchant Warrior": "Improved gold gain",
@@ -58,10 +58,6 @@ class Character(object):
     self.runes = 0
     self.traits = collections.defaultdict(int)
     self.reroll_counter = 0
-    # DEBUG
-    self.skills.append(skills.Renew(5))
-    self.stats["Intellect"] = 100
-    self.stats["Stamina"] = 1000
 
   def add_item(self, item):
     if len(self.items) >= 3:
@@ -280,6 +276,7 @@ class Character(object):
     # level-up, and these values should not change between those two calls.
     # To get around this, we probably would need to store the choices in
     # game_state and know to look at them for only levelling up.
+    # TODO: Could probably fix this by using a "Room" to level up
     random.seed((self.exp, self.current_hp, self.gold, self.reroll_counter))
     choices = [""]
     reroll_trait_level = self.traits["Self-Improvement"]
@@ -304,6 +301,71 @@ class Character(object):
     assert trait in TRAITS
     self.traits[trait] += 1
     return True
+
+  def get_skill_choices(self):
+    # TODO: DIRTY DIRTY HACK
+    # The problem is, in the game_state, it's assumed that multiple calls to
+    # get_choices (which calls this) will return the same value. But these
+    # choices are random. We want them to be the same for the two calls during
+    # level-up, and these values should not change between those two calls.
+    # To get around this, we probably would need to store the choices in
+    # game_state and know to look at them for only levelling up.
+    # TODO: Could probably fix this by using a "Room" to level up
+    choices = []
+    random.seed((self.exp, self.current_hp, self.gold, self.reroll_counter))
+    choices.append("Improve stats")
+    # If we have three skills already, we can just choose from those
+    if len(self.skills) == 3:
+      choices.extend(skill.get_name() for skill in self.skills)
+    else:
+      reroll_skill_level = self.traits["Scholar"]
+      reroll_chance = float(reroll_skill_level) / (reroll_skill_level + 1)
+      if random.random() < reroll_chance:
+        choices.append("Get New Skills")
+      while len(choices) < 4:
+        best_roll, best_skill = 0.0, None
+        for skill_name in SKILL_NAMES:
+          current_skill = self.have_skill(skill_name)
+          if current_skill is None:
+            rerolls = 1
+          else:
+            rerolls = current_skill.level
+          roll = min(random.random() for _ in range(rerolls))
+          if roll > best_roll:
+            best_roll, best_skill = roll, skill_name
+        if best_skill not in choices:
+          choices.append(best_skill)
+    return choices
+
+  def have_skill(self, name):
+    for skill in self.skills:
+      if skill.get_name() == name:
+        return skill
+    return None
+
+  def learn_skill(self, skill_name):
+    if skill_name == "Improve stats":
+      for stat in self.stats:
+        self.stats[stat] += 1
+      self.recalculate_maxes()
+      return True
+    if skill_name == "Get New Skills":
+      self.reroll_counter += 1
+      return False
+    assert skill_name in SKILL_NAMES
+    current_skill = self.have_skill(skill_name)
+    if current_skill:
+      current_skill.level += 1
+      return True
+    else:
+      assert len(self.skills) < 3
+      new_skill = None
+      for skill in SKILLS:
+        skill_instance = skill()
+        if skill_instance.get_name() == skill_name:
+          new_skill = skill_instance
+      self.skills.append(new_skill)
+      return True
 
   def gain_exp(self, exp, encounter_level, logs, level_adjust=True):
     exp_gained = exp * (1.0 + (0.03 * self.traits["Quick Learner"]))

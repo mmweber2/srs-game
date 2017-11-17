@@ -42,6 +42,17 @@ class Combat(object):
                                       character.debuffs) > 0:
           logs.append("You survive due to Last Stand")
           character.current_hp = 1
+        elif Effect.get_combined_impact("Auto Life", character.buffs,
+                                        character.debuffs) > 0:
+          logs.append("Your Auto Life effect restored your HP")
+          effect = Effect.get_combined_impact("Auto Life", character.buffs,
+                                              character.debuffs)
+          character.current_hp = 1
+          character.restore_hp(effect - 1)
+          # TODO: Fix cohesion
+          for buff in character.buffs:
+            if buff.get_name() == "Auto Life":
+              buff.duration = 0
         else:
           death_chance = 0.95 ** character.traits["Perseverance"]
           if random.random() < death_chance:

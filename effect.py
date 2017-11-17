@@ -1,7 +1,7 @@
 from equipment import STATS, DEFENSES
 
 STACK_MULTIPLY = ["XP Gain"] + STATS + DEFENSES
-STACK_MAX = ["Blinded", "Stunned", "Immortal"]
+STACK_MAX = ["Blinded", "Stunned", "Immortal", "Auto Life"]
 STACK_ADD = ["HP Restore"]
 
 class Effect(object):
@@ -261,6 +261,33 @@ class Renew(Debuff):
       self.duration = max(self.duration, buff.duration)
       # TODO: This allows casting a strong version of the buff, then refreshing
       #       it with a weaker version. Should we allow that?
+      self.quantity = max(self.quantity, buff.quantity)
+      return True
+    else:
+      return False
+      
+class AutoLife(Debuff):
+  def __init__(self, duration, quantity):
+    self.duration = duration
+    self.quantity = quantity
+
+  @classmethod
+  def stackable(cls):
+    return False
+
+  def get_name(self):
+    return "Auto Life"
+
+  def get_impacts(self):
+    impacts = {}
+    impacts["Auto Life"] = self.quantity
+    return impacts
+
+  def update(self, buff):
+    """Returns True if buff is the same kind, False otherwise."""
+    # Update the duration and effects of this buff, using the new buff.
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
       self.quantity = max(self.quantity, buff.quantity)
       return True
     else:
