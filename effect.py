@@ -22,7 +22,7 @@ class Effect(object):
   def active(self):
     return self.duration > 0
 
-  def get_effects(self):
+  def get_impacts(self):
     pass
 
   def update(self, buff):
@@ -193,3 +193,33 @@ class BulkUp(Buff):
 
   def get_name(self):
     return "Bulk Up"
+
+class Wither(Debuff):
+  def __init__(self, duration, quantity):
+    self.duration = duration
+    self.quantity = quantity
+
+  @classmethod
+  def stackable(cls):
+    return True
+
+  def get_name(self):
+    return "Wither"
+
+  def get_impacts(self):
+    impact = 0.99 ** self.quantity
+    impacts = {}
+    for stat in STATS + DEFENSES:
+      impacts[stat] = impact
+    return impacts
+    pass
+
+  def update(self, buff):
+    """Returns True if buff is the same kind, False otherwise."""
+    # Update the duration and effects of this buff, using the new buff.
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      self.quantity += buff.quantity
+      return True
+    else:
+      return False

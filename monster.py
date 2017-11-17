@@ -1,7 +1,7 @@
 import collections
 import random
 from equipment import Equipment
-from effect import Debuff
+from effect import Debuff, Effect
 
 # TODO: Should Monster and Character subclass from something?
 NORMAL_CHANCES = [0.0, 0.2, 0.04, 0.008, 0.00016]
@@ -76,6 +76,10 @@ class Monster(object):
       pieces.append("None\n")
     if debug:
       pieces.append("***DEBUG***\n")
+      for stat in self.stats:
+        pieces.append("%s: %d (%d)  " % (stat, self.get_effective_stat(stat),
+                                         self.stats[stat]))
+        pieces.append("\n")
       pieces.append("stats: %r\n" % self.stats)
       pieces.append("HP: %d / %d\n" % (self.current_hp, self.max_hp))
       pieces.append("XP value: %d\n" % self.calculate_exp())
@@ -110,8 +114,10 @@ class Monster(object):
     return treasure
 
   def get_effective_stat(self, stat):
-    # TODO: Buffs and such, probably
-    return self.stats[stat]
+    value = self.stats[stat]
+    effect = Effect.get_combined_impact(stat, self.buffs, self.debuffs)
+    value = int(value * effect)
+    return value
 
   def get_damage(self):
     low = 10 + (5 * self.level)

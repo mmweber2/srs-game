@@ -59,8 +59,9 @@ class Character(object):
     self.traits = collections.defaultdict(int)
     self.reroll_counter = 0
     # DEBUG
-    self.skills.append(skills.PoisonedBlade(5))
-    self.skills.append(skills.Meditate(5))
+    self.skills.append(skills.FinalStrike(5))
+    self.skills.append(skills.Wither(5))
+    self.skills.append(skills.Heal(5))
     self.stats["Intellect"] = 100
     self.stats["Stamina"] = 1000
 

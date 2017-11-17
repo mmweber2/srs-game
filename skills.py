@@ -2,14 +2,8 @@ import random
 from combat import Combat
 import effect
 
-SKILLS = {"Withering Attack": "Chance to inflict stacks of wither",
-          "Bubble": "Create a barrier that absorbs damage",
-          "Drain": "Perform an attack, absorb a percentage of the damage as HP",
-          "Final Strike": "Convert HP/MP to one massive attack",
-          "Heal": "Restore HP",
-          "Full Heal": "Restore all HP",
+SKILLS = {
           "Renew": "Restore HP each turn",
-          "Chain Lightning": "Do magical damage, chance to repeat",
           "Auto-Life": "Add a buff that restores HP on fatal damage",
          }
 # TODO: A few more interesting magical attacks
@@ -267,5 +261,102 @@ class Meditate(Skill):
       logs.append("Meditation failed")
     return Combat.TARGET_ALIVE
 
+class Heal(Skill):
+  def get_name(self):
+    return "Heal"
+  def base_hp_gain(self):
+    return 200 * self.level
+  def get_description(self):
+    return "Gain %d HP (base)." % self.base_hp_gain()
+  def sp_cost(self):
+    return 4 * self.level
+  def apply_skill(self, actor, opponent, logs):
+    effective_int = actor.get_effective_stat("Intellect")
+    hp_gained = self.base_hp_gain() * ((effective_int / 50.0) ** .5)
+    actor.restore_hp(hp_gained)
+    logs.append("Restored %d HP" % hp_gained)
+    return Combat.TARGET_ALIVE
+
+class Drain(Skill):
+  def get_name(self):
+    return "Drain"
+  def get_attack_multiple(self):
+    return 1.0 + 0.1 * self.level
+  def get_description(self):
+    desc = "Magical attack with %.2f multiplier. Gains some HP."
+    desc = desc % self.get_attack_multiple()
+    return desc
+  def sp_cost(self):
+    return self.level * 2
+  def apply_skill(self, actor, opponent, logs):
+    effective_int = actor.get_effective_stat("Intellect")
+    hp_gained = int(effective_int * self.get_attack_multiple() / 2)
+    result = Combat.action_attack(None, actor, opponent, logs, "Magic",
+                                    self.get_attack_multiple())
+    actor.restore_hp(hp_gained)
+    logs.append("Gained %d HP" % hp_gained)
+    return result
+
+class Wither(Skill):
+  def get_name(self):
+    return "Wither"
+  def get_attack_multiple(self):
+    return 0.7 + 0.1 * self.level
+  def get_wither_stacks(self):
+    return self.level
+  def get_description(self):
+    desc = "Magical attack with %.2f multiplier. Adds %d stacks of Wither"
+    desc = desc % (self.get_attack_multiple(), self.get_wither_stacks())
+    return desc
+  def sp_cost(self):
+    return self.level * 3
+  def apply_skill(self, actor, opponent, logs):
+    result = Combat.action_attack(None, actor, opponent, logs, "Magic",
+                                    self.get_attack_multiple())
+    opponent.add_debuff(effect.Wither(10, self.get_wither_stacks()))
+    return result
+
+class ChainLightning(Skill):
+  def get_name(self):
+    return "Chain Lightning"
+  def get_attack_multiple(self):
+    return 1.0 + 0.05 * self.level
+  def get_repeat_chance(self):
+    return 1.0 - (0.8 ** self.level)
+  def get_description(self):
+    desc = "Magical attack with %.2f multiplier. %.0f%% initial repeat chance."
+    desc = desc % (self.get_attack_multiple(), self.get_repeat_chance() * 100)
+    return desc
+  def sp_cost(self):
+    return int(self.level * 5 * (1.1 ** self.level))
+  def apply_skill(self, actor, opponent, logs):
+    repeat_chance = self.get_repeat_chance()
+    result = Combat.action_attack(None, actor, opponent, logs, "Magic",
+                                    self.get_attack_multiple())
+    while result == Combat.TARGET_ALIVE and random.random() < repeat_chance:
+      repeat_chance *= .9
+      result = Combat.action_attack(None, actor, opponent, logs, "Magic",
+                                    self.get_attack_multiple())
+    return result
+
+class FinalStrike(Skill):
+  def get_name(self):
+    return "Final Strike"
+  def get_description(self):
+    return "Magical and physical attack. Uses all HP and SP"
+  def sp_cost(self):
+    return 0
+  def apply_skill(self, actor, opponent, logs):
+    multiplier = (actor.current_sp / 100.0) + 1.0
+    multiplier += (actor.current_hp / 250.0)
+    multiplier *= 1.0 + (0.2 * self.level)
+    Combat.action_attack(None, actor, opponent, logs, "Magic", multiplier)
+    result = Combat.action_attack(None, actor, opponent, logs, "Physical",
+                                  multiplier)
+    actor.current_sp = 0
+    actor.current_hp = 1
+    return result
+
 SKILLS = [QuickAttack, Blind, Bash, Protection, HeavySwing, LastStand, Surge,
-          Concentrate, Swiftness, BulkUp, Cannibalize, PoisonedBlade]
+          Concentrate, Swiftness, BulkUp, Cannibalize, PoisonedBlade,
+          Meditate, Heal, Drain, Wither, ChainLightning, FinalStrike]
