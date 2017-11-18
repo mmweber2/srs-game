@@ -40,6 +40,14 @@ DEBUG_GOLD = None
 #       To help debug these, make a Character function that gives a character
 #       of a given level with random traits/skills/etc, and then gives it
 #       Equipment
+# START HERE
+
+# TODO: Need a use for common materials
+
+# TODO: Need a use for materials in general. Probably something to create
+#       armor/weapons
+
+# TODO: add traits to weapons/armor
 
 # TODO: Add an "acknowledgement" state, to make certain uncommon states harder
 #       to skip past (levelling up, finding a shop in a tower, etc)
@@ -48,6 +56,13 @@ DEBUG_GOLD = None
 #       something fails. Maybe we can do a replay of sorts
 
 # TODO: Add bosses for each level / each 5 levels / whatever
+
+# TODO: Maybe make it only level traits on even and skills on odd levels
+
+# Game Balance notes:
+
+# TODO: Bug: Can set the cursor position in text fields messing up the log
+# TODO: Bug: Levelling up at the trainer does not trigger trait/skills
 
 class GameState(object):
   """

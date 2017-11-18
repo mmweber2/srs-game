@@ -230,7 +230,7 @@ class Forge(Room):
   def reforge_cost_gold(self, item):
     level = item.item_level
     return int((self.level - level)
-               * ((25 * level) * ((item.reforge_count + 1) ** 2))
+               * ((15 * level) * ((item.reforge_count + 1) ** 2))
                * self.faction_rate)
 
   def reforge_cost_materials(self, item):

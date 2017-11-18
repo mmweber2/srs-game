@@ -34,7 +34,7 @@ class QuickAttack(Skill):
     desc = desc % (self.get_attack_multiple(), (self.go_again_chance() * 100))
     return desc
   def sp_cost(self):
-    return self.level * 4
+    return int(self.level * 4 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     result = Combat.action_attack(None, actor, opponent, logs, "Physical",
                                   self.get_attack_multiple())
@@ -59,7 +59,7 @@ class Blind(Skill):
     desc = desc % (self.get_attack_multiple(), (self.blind_chance() * 100))
     return desc
   def sp_cost(self):
-    return self.level * 4
+    return int(self.level * 4 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     result = Combat.action_attack(None, actor, opponent, logs, "Physical",
                                   self.get_attack_multiple())
@@ -83,7 +83,7 @@ class Bash(Skill):
     desc = desc % (self.get_attack_multiple(), (self.stun_chance() * 100))
     return desc
   def sp_cost(self):
-    return self.level * 5
+    return int(self.level * 5 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     result = Combat.action_attack(None, actor, opponent, logs, "Physical",
                                   self.get_attack_multiple())
@@ -103,7 +103,7 @@ class Protection(Skill):
   def get_description(self):
     return "Increase def/mdef by 100%% for %d time units" % self.buff_duration()
   def sp_cost(self):
-    return self.level * 2
+    return int(self.level * 2 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     actor.add_buff(effect.Protection(self.buff_duration()))
     return Combat.TARGET_ALIVE
@@ -120,7 +120,7 @@ class HeavySwing(Skill):
     desc = desc % (self.get_attack_multiple(), (self.miss_chance() * 100))
     return desc
   def sp_cost(self):
-    return self.level * 4
+    return int(self.level * 4 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     if random.random() < self.miss_chance():
       logs.append("Heavy Swing missed")
@@ -138,7 +138,7 @@ class LastStand(Skill):
   def get_description(self):
     return "Cannot die for %d time units." % self.duration()
   def sp_cost(self):
-    return 50 + 10 * self.level
+    return 50 + int(self.level * 8 * (1.1 ** self.level))
   def once_per_battle(self):
     return True
   def apply_skill(self, actor, opponent, logs):
@@ -153,7 +153,7 @@ class Surge(Skill):
   def get_description(self):
     return "Strength up by 100%% for %d time" % self.buff_duration()
   def sp_cost(self):
-    return self.level * 3
+    return int(self.level * 3 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     actor.add_buff(effect.Surge(self.buff_duration()))
     return Combat.TARGET_ALIVE
@@ -166,7 +166,7 @@ class Concentrate(Skill):
   def get_description(self):
     return "Intelligence up by 100%% for %d time" % self.buff_duration()
   def sp_cost(self):
-    return self.level * 3
+    return int(self.level * 3 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     actor.add_buff(effect.Concentrate(self.buff_duration()))
     return Combat.TARGET_ALIVE
@@ -179,7 +179,7 @@ class Swiftness(Skill):
   def get_description(self):
     return "Speed up by 100%% for %d time" % self.buff_duration()
   def sp_cost(self):
-    return self.level * 4
+    return int(self.level * 4 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     actor.add_buff(effect.Swiftness(self.buff_duration()))
     return Combat.TARGET_ALIVE
@@ -192,7 +192,7 @@ class BulkUp(Skill):
   def get_description(self):
     return "Stamina up by 100%% for %d time" % self.buff_duration()
   def sp_cost(self):
-    return self.level * 3
+    return int(self.level * 6 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     actor.add_buff(effect.BulkUp(self.buff_duration()))
     return Combat.TARGET_ALIVE
@@ -228,7 +228,7 @@ class PoisonedBlade(Skill):
     desc = desc % (self.get_attack_multiple(), (self.kill_chance() * 100))
     return desc
   def sp_cost(self):
-    return self.level * 2
+    return int(self.level * 3 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     if random.random() < self.kill_chance() and not opponent.boss:
       logs.append("Assassinated!")
@@ -265,7 +265,7 @@ class Heal(Skill):
   def get_description(self):
     return "Gain %d HP (base)." % self.base_hp_gain()
   def sp_cost(self):
-    return 4 * self.level
+    return int(self.level * 3 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     effective_int = actor.get_effective_stat("Intellect")
     hp_gained = int(self.base_hp_gain() * ((effective_int / 50.0) ** .5))
@@ -283,7 +283,7 @@ class Drain(Skill):
     desc = desc % self.get_attack_multiple()
     return desc
   def sp_cost(self):
-    return self.level * 2
+    return int(self.level * 2 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     effective_int = actor.get_effective_stat("Intellect")
     hp_gained = int(effective_int * self.get_attack_multiple() / 2)
@@ -305,7 +305,7 @@ class Wither(Skill):
     desc = desc % (self.get_attack_multiple(), self.get_wither_stacks())
     return desc
   def sp_cost(self):
-    return self.level * 3
+    return int(self.level * 4 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     result = Combat.action_attack(None, actor, opponent, logs, "Magic",
                                   self.get_attack_multiple())
@@ -324,7 +324,7 @@ class ChainLightning(Skill):
     desc = desc % (self.get_attack_multiple(), self.get_repeat_chance() * 100)
     return desc
   def sp_cost(self):
-    return int(self.level * 5 * (1.1 ** self.level))
+    return int(self.level * 4 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     repeat_chance = self.get_repeat_chance()
     result = Combat.action_attack(None, actor, opponent, logs, "Magic",
@@ -357,14 +357,14 @@ class Renew(Skill):
   def get_name(self):
     return "Renew"
   def base_hp_gain(self):
-    return (200 * self.level) / 10
+    return 50 * self.level
   def buff_duration(self):
     return 9 + self.level
   def get_description(self):
     return "Gain %d HP/turn (base) for %d turns." % (self.base_hp_gain(),
                                                      self.buff_duration())
   def sp_cost(self):
-    return 3 * self.level
+    return int(self.level * 3 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     effective_int = actor.get_effective_stat("Intellect")
     buff_strength = int(self.base_hp_gain() * ((effective_int / 50.0) ** .5))
@@ -381,7 +381,7 @@ class AutoLife(Skill):
   def get_description(self):
     return "Buff that restores %d HP on death once." % self.hp_gain()
   def sp_cost(self):
-    return 10 * self.level
+    return int(self.level * 10 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     actor.add_buff(effect.AutoLife(self.buff_duration(), self.hp_gain()))
     return Combat.TARGET_ALIVE

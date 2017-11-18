@@ -93,7 +93,7 @@ class Character(object):
       if buff.active():
         remaining_buffs.append(buff)
     self.buffs = remaining_buffs
-    restored_hp = self.traits["Regeneration"] * self.max_hp * time_passed / 100
+    restored_hp = self.traits["Regeneration"] * 3 * time_passed
     # Not used yet
     restored_sp = self.traits["Clarity of Mind"] * time_passed
     self.restore_hp(restored_hp)
@@ -228,7 +228,7 @@ class Character(object):
 
   def next_level_exp(self):
     # TODO: Something more "complex", lol
-    return self.level * 100
+    return int(self.level * 100 * (1.01 ** self.level))
 
   def recalculate_maxes(self):
     new_max_hp = self.get_effective_stat("Stamina") * 5 + self.base_hp
