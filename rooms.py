@@ -9,6 +9,7 @@ class Room(object):
   USE_ITEM = 2
   PURIFY_RUNE = 3
   ENTER_DUNGEON = 4
+  LEVEL_UP = 5
 
   def __init__(self, level):
     self.level = level
@@ -66,10 +67,17 @@ class TrainingRoom(Room):
     if choice_text == "Gain XP":
       cost = self.xp_training_cost()
       if cost <= character.gold:
-        character.train_xp(self.level, logs)
+        levelups = character.train_xp(self.level, logs)
         self.train_count += 1
         character.gold -= cost
-        return (5, Room.NO_CHANGE)
+        if levelups > 0:
+          # TODO (?): There's a bug here. What if the character levels up more
+          # than once? That "shouldn't" happen, but...
+          # One fix would be to make train_xp stop short of a level as a design
+          # tradeoff, so levelling up doesn't happen in here.
+          return (5, Room.LEVEL_UP)
+        else:
+          return (5, Room.NO_CHANGE)
       else:
         logs.append("Not enough money to train XP")
         return (0, Room.NO_CHANGE)

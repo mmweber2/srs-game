@@ -29,7 +29,7 @@ UPDATE_TIME = 360
 DEBUG_FLOOR = 1
 DEBUG_BUILDING = None
 DEBUG_GOLD = None
-#DEBUG_BUILDING = rooms.Alchemist
+#DEBUG_BUILDING = rooms.TrainingRoom
 #DEBUG_GOLD = 1000
 
 # TODO: It is probably not best to be passing logs around to everything?
@@ -62,7 +62,6 @@ DEBUG_GOLD = None
 # Game Balance notes:
 
 # TODO: Bug: Can set the cursor position in text fields messing up the log
-# TODO: Bug: Levelling up at the trainer does not trigger trait/skills
 
 class GameState(object):
   """
@@ -588,6 +587,10 @@ class GameState(object):
       self.add_state("RUNE_WORLD")
     elif result == self.current_shop.ENTER_DUNGEON:
       self.add_state("DUNGEON")
+    elif result == self.current_shop.LEVEL_UP:
+      self.levelups = 1
+      self.skillups = 1
+      self.add_state("LEVEL_UP")
     else:
       assert False
 
