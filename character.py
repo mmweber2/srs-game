@@ -59,6 +59,35 @@ class Character(object):
     self.traits = collections.defaultdict(int)
     self.reroll_counter = 0
 
+  @classmethod
+  def debug_character(cls, level, choice_text):
+    character = Character()
+    my_random = random.SystemRandom()
+    for i in range(1, level):
+      character.level_up([])
+      trait_choices = character.get_trait_choices()
+      choice = ""
+      while choice not in TRAITS:
+        choice = random.choice(trait_choices)
+      character.learn_trait(choice)
+      skill_choices = character.get_skill_choices()
+      choice = ""
+      while choice not in SKILL_NAMES + ["Improve stats"]:
+        choice = random.choice(skill_choices)
+      chance = 10.0 / i
+      if random.random() < chance:
+        character.learn_skill(choice)
+      else:
+        character.learn_skill("Improve stats")
+    character.make_debug_equipment(level, choice_text)
+    character.level = level
+    return character
+
+  def make_debug_equipment(self, level, choice):
+    for i in range(len(self.equipment)):
+      self.equip(Equipment.get_new_armor(level, slot=i, require=choice, 
+                                         rarity=3))
+
   def add_item(self, item):
     if len(self.items) >= 3:
       return False

@@ -19,9 +19,13 @@ TOWER_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
 CHOICES = {"CHAR_CREATE": ["Strength", "Stamina", "Speed", "Intellect"],
            "RUNE_WORLD": ["Explore", "", "Item", "Leave Rune"],
            "TOWER": ["Explore", "Rest", "Item", "Leave Tower"],
+           "SUMMIT": ["Stronghold of the Ten", "Infinity Dungeon", "Town",
+                      "Descend Tower"],
+           "STRONGHOLD": ["Enter Room", "Rest", "Item", "Leave Stronghold"],
            "DUNGEON": ["Explore", "Rest", "Item", "Leave Dungeon"],
            "COMBAT": ["Attack", "Skill", "Item", "Escape"],
            "LOOT_EQUIPMENT": ["", "Keep Current", "Keep New", ""],
+           "VICTORY": [""] * 4,
            "ACCEPT_QUEST": ["", "Accept Quest", "Decline Quest", ""]}
 
 TOWER_LEVELS = 100
@@ -29,39 +33,46 @@ UPDATE_TIME = 360
 DEBUG_FLOOR = 1
 DEBUG_BUILDING = None
 DEBUG_GOLD = None
+DEBUG_CHARACTER = None
 #DEBUG_BUILDING = rooms.TrainingRoom
 #DEBUG_GOLD = 1000
+#DEBUG_CHARACTER = 100
 
+# TODO: Add menu choice to restart game
 # TODO: It is probably not best to be passing logs around to everything?
 #       it could be part of the GameState, or we could use a logger for real
-
-# TODO: Add top floor state
-#       Add ending
-#       To help debug these, make a Character function that gives a character
-#       of a given level with random traits/skills/etc, and then gives it
-#       Equipment
-# START HERE
-
 # TODO: Need a use for common materials
-
 # TODO: Need a use for materials in general. Probably something to create
-#       armor/weapons
-
+#       armor/weapons. Could create a random item of floor + (1d6)ish levels
+# TODO: Make materials drop less
 # TODO: add traits to weapons/armor
-
 # TODO: Add an "acknowledgement" state, to make certain uncommon states harder
 #       to skip past (levelling up, finding a shop in a tower, etc)
-
 # TODO: Add some more extensive logging that gets written to disk in case
 #       something fails. Maybe we can do a replay of sorts
-
-# TODO: Add bosses for each level / each 5 levels / whatever
-
 # TODO: Maybe make it only level traits on even and skills on odd levels
+# TODO: Bug: Can set the cursor position in text fields messing up the log
+# TODO: Limit damage in one hit to 9999 for coolness factor?
+#       (Excepting Final Strike probably)
+# TODO: Bug: Button labels are not fully displayed
 
 # Game Balance notes:
-
-# TODO: Bug: Can set the cursor position in text fields messing up the log
+# -- Drain very powerful at high levels of int. Might need some scaling.
+#    That said, it needs some benefit to levelling it other than the 0.1x
+#    Might squareroot the int, and add a multiple of the level
+# -- Increase SP costs (mostly by increase base... at low levels, they cost too
+#    little
+# -- Magical/Physical seems to matter very little. Probably having a physical
+#    weapon should not help magical attacks and vice-versa
+# TODO: Disallow running from bosses
+# TODO: Increase monster damage (get_damage)
+# TODO: Increase boss damage (same)
+# -- Possibly modify damage a small amount depending on level difference?
+# -- Renew too powerful at high levels
+# -- Make tower 50 levels? 100 is... a lot
+# -- Tone down experience boost from level difference
+# -- Make rune world mobs bosses
+# TODO: Look at stat balance. START HERE
 
 class GameState(object):
   """
@@ -101,6 +112,12 @@ class GameState(object):
     self.levelups = 0
     self.skillups = 0
     self.skills_used = set()
+    self.infinity_dungeon = False
+    # DEBUG:
+    #self.frontier = 99
+    #for i in range(self.frontier):
+    #  self.tower_lock[i] = False
+    #self.floor = 99
 
   ###
   # Helper methods for changing state
@@ -269,7 +286,10 @@ class GameState(object):
   ###
 
   def apply_choice_char_create(self, logs, choice_text):
-    self.character.make_initial_equipment(choice_text)
+    if DEBUG_CHARACTER:
+      self.character = Character.debug_character(DEBUG_CHARACTER, choice_text)
+    else:
+      self.character.make_initial_equipment(choice_text)
     logs.append("Generated %s equipment." % choice_text)
     self.change_state("TOWN")
 
@@ -360,6 +380,23 @@ class GameState(object):
         self.add_state("LEVEL_UP")
       self.handle_treasure(logs)
 
+  def apply_choice_stronghold(self, logs, choice_text):
+    if choice_text == "Enter Room":
+      level = TOWER_LEVELS - 20 + (self.stronghold_room * 5)
+      self.start_combat(logs, True, level=level)
+    elif choice_text == "Rest":
+      self.pass_time(5, logs)
+      logs.append("You rest")
+      hp_gained = self.character.rest()
+      logs.append("You regain %d HP" % hp_gained)
+    elif choice_text == "Item":
+      self.pass_time(0, logs)
+      self.add_state("USE_ITEM")
+    elif choice_text == "Leave Stronghold":
+      self.pass_time(10, logs)
+      logs.append("You leave the Stronghold of the Ten")
+      self.leave_state()
+
   def apply_choice_tower(self, logs, choice_text):
     if choice_text == "Explore":
       self.pass_time(random.randint(1, 10), logs)
@@ -385,11 +422,20 @@ class GameState(object):
           self.start_combat(logs, True)  # Boss monster
         else:
           self.start_combat(logs, False)
+      elif self.ascension_encounters == 0:
+        self.ascension_encounters -= 1
+        self.start_combat(logs, True)  # Floor boss
       else:
+        assert self.ascension_encounters == -1
         self.floor += 1
         self.frontier = max(self.frontier, self.floor)
-        self.change_state("OUTSIDE")
         logs.append("Congratulations, you have reached floor %d" % self.floor)
+        if self.floor < TOWER_LEVELS:
+          self.change_state("OUTSIDE")
+        elif self.floor == TOWER_LEVELS:
+          self.change_state("SUMMIT")
+        else:
+          assert False
     elif choice_text == "Rest":
       self.pass_time(5, logs)
       logs.append("You rest")
@@ -422,6 +468,8 @@ class GameState(object):
   # TODO: Duplication with apply_choice_tower
   def apply_choice_dungeon(self, logs, choice_text):
     if choice_text == "Explore":
+      if self.infinity_dungeon:
+        self.floor += 1
       self.pass_time(random.randint(1, 5), logs)
       logs.append("You explore the dungeon...")
       random_number = random.random()
@@ -446,7 +494,13 @@ class GameState(object):
     elif choice_text == "Leave Dungeon":
       self.pass_time(5, logs)
       logs.append("You leave the dungeon")
-      self.leave_state()
+      if self.infinity_dungeon:
+        self.infinity_dungeon = False
+        self.floor = TOWER_LEVELS
+        self.leave_state()
+        self.change_state("SUMMIT")
+      else:
+        self.leave_state()
 
   def apply_death(self, logs):
     # TODO: Clean this up. The code flow is messy
@@ -455,6 +509,8 @@ class GameState(object):
     self.monster.debuffs = []
     self.skills_used = set()
     self.monster = None
+    if self.floor > TOWER_LEVELS:
+      self.floor = TOWER_LEVELS
     # TODO: This is hacky. Should probably have TOWER also be an add_state
     if self.current_state() == "QUEST":
       self.character.apply_death(logs)
@@ -463,12 +519,20 @@ class GameState(object):
       self.character.apply_death(logs, penalty=False)
       self.handle_rune_completion(logs)
       return
+    elif self.current_state() == "DUNGEON":
+      self.character.apply_death(logs)
+      self.leave_state()
+      if self.current_state() == "SHOP":
+        self.current_shop = None
+        self.leave_state()
     else:
       self.character.apply_death(logs)
     self.change_state("TOWN")
     self.pass_time(random.randint(0, 3 * self.floor), logs)
 
   def dungeon_victory_update(self, base_floor):
+    if self.infinity_dungeon:
+      return
     for floor in xrange(max(1, base_floor - 3),
                         min(base_floor + 3, TOWER_LEVELS) + 1):
       difference = abs(floor - base_floor)
@@ -491,6 +555,10 @@ class GameState(object):
         self.quest.defeat_monster()
       if self.current_state() == "DUNGEON":
         self.dungeon_victory_update(self.floor)
+      if self.current_state() == "STRONGHOLD":
+        self.stronghold_room += 1
+        if self.stronghold_room == 10:
+          self.change_state("VICTORY")
       if levelups > 0:
         self.levelups = levelups
         self.skillups = levelups
@@ -557,7 +625,10 @@ class GameState(object):
   def apply_choice_town(self, logs, choice_text):
     if choice_text == "Leave Town":
       self.pass_time(2, logs)
-      self.change_state("OUTSIDE")
+      if self.floor == TOWER_LEVELS:
+        self.change_state("SUMMIT")
+      else:
+        self.change_state("OUTSIDE")
       logs.append("Left town")
     else:
       shop = None
@@ -594,6 +665,25 @@ class GameState(object):
     else:
       assert False
 
+  def apply_choice_summit(self, logs, choice_text):
+    # START HERE: Town and descend tower are easy.
+    if choice_text == "Stronghold of the Ten":
+      self.add_state("STRONGHOLD")
+      self.stronghold_room = 0
+    elif choice_text == "Infinity Dungeon":
+      self.infinity_dungeon = True
+      self.add_state("DUNGEON")
+    elif choice_text == "Town":
+      self.pass_time(5, logs)
+      self.change_state("TOWN")
+      logs.append("Went to town")
+    elif choice_text == "Descend Tower":
+      self.pass_time(10, logs)
+      self.floor -= 1  # Bug if there's only one floor, I guess.
+      self.change_state("OUTSIDE")
+      logs.append("Descended to floor %d" % self.floor)
+
+
   def apply_choice_outside(self, logs, choice_text):
     if choice_text == "Ascend Tower":
       self.pass_time(10, logs)
@@ -604,6 +694,8 @@ class GameState(object):
       else:
         self.floor += 1
         logs.append("Ascended to floor %d" % self.floor)
+        if self.floor == TOWER_LEVELS:
+          self.change_state("SUMMIT")
     elif choice_text == "Quest":
       self.pass_time(5, logs)
       self.add_state("ACCEPT_QUEST")
@@ -702,6 +794,8 @@ class GameState(object):
       return "Town on tower level %d" % self.floor
     elif current_state == "OUTSIDE":
       return "Outside town on tower level %d" % self.floor
+    elif current_state == "SUMMIT":
+      return "At the summit of the tower"
     elif current_state == "TOWER":
       return "Inside the tower ascending to level %d" % (self.floor + 1)
     elif current_state == "COMBAT":
@@ -724,5 +818,9 @@ class GameState(object):
       return self.skill_text()
     elif current_state == "USE_SKILL":
       return self.skill_select_text()
+    elif current_state == "STRONGHOLD":
+      return "Stronghold of the Ten: Room %d" % (self.stronghold_room + 1)
+    elif current_state == "VICTORY":
+      return "You win! Victory Time: %d" % self.time_spent
     else:
       return "Error, no text for state %s" % current_state
