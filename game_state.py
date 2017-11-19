@@ -103,6 +103,7 @@ class GameState(object):
     self.skillups = 0
     self.skills_used = set()
     self.infinity_dungeon = False
+    self.stronghold_room = 0
     if DEBUG_TOWER_START:
       self.frontier = DEBUG_TOWER_START
       self.floor = 49

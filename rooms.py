@@ -622,7 +622,7 @@ class Alchemist(Room):
                            items.MinorSwiftnessPotion,
                            items.BulkUpPotion, items.MajorBulkUpPotion,
                            items.MinorBulkUpPotion,
-                           items.ConcentratePotion, 
+                           items.ConcentratePotion,
                            items.MajorConcentratePotion,
                            items.MinorConcentratePotion]
     self.inventory = self.generate_inventory()

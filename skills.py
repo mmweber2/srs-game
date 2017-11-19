@@ -349,7 +349,7 @@ class FinalStrike(Skill):
     base_damage = actor.current_hp - 1
     base_damage += (actor.current_sp * 3)
     base_damage *= 1.0 + (0.1 * self.level)
-    result = Combat.action_attack(None, actor, opponent, logs, "Magic", 
+    result = Combat.action_attack(None, actor, opponent, logs, "Magic",
                                   base_damage=base_damage)
     actor.current_sp = 0
     actor.current_hp = 1

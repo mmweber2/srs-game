@@ -63,7 +63,7 @@ class Monster(object):
   def add_debuff(self, new_debuff):
     Debuff.add_debuff(self.debuffs, new_debuff)
 
-  def libra_string(self, libra_level):  
+  def libra_string(self, libra_level):
     pieces = []
     pieces.append("Name: %s\n" % self.name)
     # TODO: Add level and boss indicator

@@ -38,8 +38,6 @@ class Character(object):
     # Weapon, Helm, Chest, Legs, Accessory
     self.equipment = [None, None, None, None, None]
     self.items = []
-    # DEBUG
-    self.items = [items.BulkUpPotion(), items.MajorBulkUpPotion(), items.MinorBulkUpPotion()]
     self.skills = []
     self.stats = {"Strength": 20, "Stamina": 20, "Defense": 20, "Speed": 20,
                   "Intellect": 20, "Magic Defense": 20}
@@ -63,7 +61,6 @@ class Character(object):
   @classmethod
   def debug_character(cls, level, choice_text):
     character = Character()
-    my_random = random.SystemRandom()
     for i in range(1, level):
       character.level_up([])
       trait_choices = character.get_trait_choices()
@@ -86,7 +83,7 @@ class Character(object):
 
   def make_debug_equipment(self, level, choice):
     for i in range(len(self.equipment)):
-      self.equip(Equipment.get_new_armor(level, slot=i, require=choice, 
+      self.equip(Equipment.get_new_armor(level, slot=i, require=choice,
                                          rarity=3))
 
   def add_item(self, item):
