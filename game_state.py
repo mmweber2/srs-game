@@ -48,6 +48,7 @@ DEBUG_TOWER_START = 49
 # TODO: Need a use for common materials
 # TODO: Need a use for materials in general. Probably something to create
 #       armor/weapons. Could create a random item of floor + (1d6)ish levels
+#       (START HERE)
 # TODO: add traits to weapons/armor
 # TODO: Add an "acknowledgement" state, to make certain uncommon states harder
 #       to skip past (levelling up, finding a shop in a tower, etc)
@@ -663,7 +664,6 @@ class GameState(object):
       assert False
 
   def apply_choice_summit(self, logs, choice_text):
-    # START HERE: Town and descend tower are easy.
     if choice_text == "Stronghold of the Ten":
       self.add_state("STRONGHOLD")
       self.stronghold_room = 0
