@@ -57,22 +57,16 @@ DEBUG_CHARACTER = None
 # TODO: Bug: Button labels are not fully displayed
 
 # Game Balance notes:
-# -- Drain very powerful at high levels of int. Might need some scaling.
-#    That said, it needs some benefit to levelling it other than the 0.1x
-#    Might squareroot the int, and add a multiple of the level
-# -- Increase SP costs (mostly by increase base... at low levels, they cost too
-#    little
 # -- Magical/Physical seems to matter very little. Probably having a physical
 #    weapon should not help magical attacks and vice-versa
 # TODO: Disallow running from bosses
-# TODO: Increase monster damage (get_damage)
-# TODO: Increase boss damage (same)
 # -- Possibly modify damage a small amount depending on level difference?
-# -- Renew too powerful at high levels
-# -- Make tower 50 levels? 100 is... a lot
-# -- Tone down experience boost from level difference
+#   -- Also possibly skill checks. Something like 1.01 ** level difference
 # -- Make rune world mobs bosses
-# TODO: Look at stat balance. START HERE
+# -- Implement c-c-c-combobreaker (START HERE)
+# -- Make tower 50 levels? 100 is... a lot (START HERE) (also test)
+# -- Make some sort of libra thing
+
 
 class GameState(object):
   """
@@ -303,7 +297,7 @@ class GameState(object):
   def apply_choice_rune_world(self, logs, choice_text):
     if choice_text == "Explore":
       self.rune_level += 1
-      self.start_combat(logs, False, level=self.rune_level)
+      self.start_combat(logs, True, level=self.rune_level)
     elif choice_text == "Item":
       self.pass_time(0, logs)
       self.add_state("USE_ITEM")

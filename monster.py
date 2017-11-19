@@ -20,13 +20,13 @@ class Monster(object):
     # If you modify these, make sure to modify the XP calc
     # TODO: Make a common table both rely on, idiot
     for stat in ("Strength", "Defense", "Speed", "Intellect", "Magic Defense"):
-      self.stats[stat] = self.roll_stat(level, 10, 1)
+      self.stats[stat] = self.roll_stat(level, 12, 1)
     for stat in ("Stamina",):
-      self.stats[stat] = self.roll_stat(level, 8, 0)
+      self.stats[stat] = self.roll_stat(level, 10, 1)
     if boss:
       for stat in self.stats:
-        self.stats[stat] = self.stats[stat] * 1.25
-      self.stats["Stamina"] *= 3   # Effectively x3.75
+        self.stats[stat] = self.stats[stat] * 1.3
+      self.stats["Stamina"] *= 4   # Effectively x6.00
     for stat in self.stats:
       # 75-125% change
       self.stats[stat] *= (random.random() * 0.5) + 0.75
@@ -85,9 +85,9 @@ class Monster(object):
   def calculate_exp(self):
     effective_level = 0
     for stat in ("Strength", "Defense", "Speed", "Intellect", "Magic Defense"):
-      effective_level += (self.stats[stat] / 6.5)
+      effective_level += (self.stats[stat] / 7.5)
     for stat in ("Stamina",):
-      effective_level += (self.stats[stat] / 4.5)
+      effective_level += (self.stats[stat] / 6.5)
     effective_level /= 6
     return int(10 * effective_level)
 
@@ -117,8 +117,10 @@ class Monster(object):
     return value
 
   def get_damage(self):
-    low = 10 + (5 * self.level)
-    high = 20 + (7 * self.level)
+    boss_factor = 1.20 if self.boss else 1.0
+    low = (10 + (7 * self.level)) * boss_factor
+    high = (20 + (14 * self.level)) * boss_factor
+    low, high = int(low), int(high)
     return random.randint(low, high)
 
   def get_damage_type(self):

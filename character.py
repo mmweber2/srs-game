@@ -400,7 +400,7 @@ class Character(object):
     exp_gained = exp * (1.0 + (0.03 * self.traits["Quick Learner"]))
     level_difference = encounter_level - self.level
     if level_adjust:
-      exp_gained = int(exp_gained * (1.1 ** level_difference))
+      exp_gained = int(exp_gained * (1.03 ** level_difference))
     xp_buff = Effect.get_combined_impact("XP Gain", self.buffs, self.debuffs)
     total_xp_gain = int(exp_gained * xp_buff)
     self.exp += total_xp_gain
