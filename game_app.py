@@ -26,7 +26,7 @@ class ButtonPanel(wx.Panel):
     wx.Panel.__init__(self, parent, wx.NewId())
     # Buttons
     self.button_sizer = wx.GridSizer(rows=3, cols=3, hgap=5, vgap=5)
-    self.button_names = [" " * 30 for _ in range(4)]
+    self.button_names = ["a" * 30 for _ in range(4)]
     self.buttons = []
     for i in range(4):
       self.button_sizer.Add(wx.StaticText(self))
@@ -89,7 +89,7 @@ class EncounterPanel(wx.Panel):
 class MainWindow(wx.Frame):
   # pylint: disable=too-many-instance-attributes
   def __init__(self, parent, title):
-    wx.Frame.__init__(self, parent, title=title, size=(1000, 600))
+    wx.Frame.__init__(self, parent, title=title, size=(1200, 600))
     self.status_bar = self.CreateStatusBar(4)
     self.status_bar.SetStatusText("Welcome to SRS Game")
     self.status_bar.SetStatusText("Energy: 0", 1)
@@ -119,10 +119,8 @@ class MainWindow(wx.Frame):
     self.right_sizer.Add(self.char_panel, 2, wx.EXPAND)
     self.right_sizer.Add(self.log_panel, 1, wx.EXPAND)
 
-    # For now, only the log_panel is on the right side.
-    # Eventually, we'd have a right_sizer containing it
-    self.top_sizer.Add(self.left_sizer, 1, wx.EXPAND)
-    self.top_sizer.Add(self.right_sizer, 2, wx.EXPAND)
+    self.top_sizer.Add(self.left_sizer, 2, wx.EXPAND)
+    self.top_sizer.Add(self.right_sizer, 3, wx.EXPAND)
     #self.SetSizerAndFit(self.top_sizer)
     self.SetSizer(self.top_sizer)
 

@@ -109,10 +109,11 @@ class Combat(object):
 
   @classmethod
   def action_attack(cls, _, actor, target, logs, attack_type=None,
-                    multiplier=None):
+                    multiplier=None, base_damage=None):
     """Attacks, applies damage, returns True if target dies."""
+    assert (multiplier is None) or (base_damage is None)
     logs.append("%s attacks %s" % (actor.name, target.name))
-    damage = actor.get_damage()
+    damage = base_damage or actor.get_damage()
     damage_type = attack_type or actor.get_damage_type()
     damage = cls.apply_traits(damage, damage_type, actor, target)
     if damage_type == "Physical":
@@ -129,6 +130,7 @@ class Combat(object):
       factor *= multiplier
     level_factor = 1.02 ** (actor.level - target.level)
     damage = int(damage * factor * level_factor)
+    if damage > 9999: damage = 9999
     if Effect.get_combined_impact("Blinded", actor.buffs, actor.debuffs) > 0:
       if random.random() < .5:
         logs.append("Misses due to Blindness")

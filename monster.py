@@ -67,7 +67,10 @@ class Monster(object):
     pieces = []
     pieces.append("Name: %s\n" % self.name)
     # TODO: Add level and boss indicator
-    pieces.append("HP: %s\n" % self.hp_string())
+    if libra_level == 0:
+      pieces.append("HP: %s\n" % self.hp_string())
+    else:
+      pieces.append("HP: %d / %d\n" % (self.current_hp, self.max_hp))
     pieces.append("Debuffs: ")
     pieces.append(", ".join(str(debuff) for debuff in self.debuffs))
     if self.debuffs:

@@ -140,14 +140,17 @@ class Equipment(object):
 
   def get_recycled_materials(self):
     materials = [0] * len(RARITY)
+    count = 0
     for _ in xrange(self.item_level):
-      # Will slightly push range down due to rounding
+      if random.random() > .8 ** count:
+        continue
       rarity = int(self.rarity + random.gauss(0, 1))
       if rarity < 0:
         continue
       if rarity >= len(RARITY):
         rarity = len(RARITY) - 1
       materials[rarity] += 1
+      count += 1
     return materials
 
   @classmethod

@@ -7,6 +7,7 @@ from equipment import Equipment
 from quest import Quest
 import rooms
 from items import Item
+import skills
 
 TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                   rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
@@ -35,7 +36,7 @@ DEBUG_GOLD = None
 DEBUG_CHARACTER = None
 #DEBUG_BUILDING = rooms.TrainingRoom
 #DEBUG_GOLD = 1000
-#DEBUG_CHARACTER = 60
+DEBUG_CHARACTER = 100
 DEBUG_TOWER_START = 49
 
 # TODO: http://www.pyinstaller.org/ to get packages
@@ -45,7 +46,6 @@ DEBUG_TOWER_START = 49
 # TODO: Need a use for common materials
 # TODO: Need a use for materials in general. Probably something to create
 #       armor/weapons. Could create a random item of floor + (1d6)ish levels
-# TODO: Make materials drop less
 # TODO: add traits to weapons/armor
 # TODO: Add an "acknowledgement" state, to make certain uncommon states harder
 #       to skip past (levelling up, finding a shop in a tower, etc)
@@ -53,17 +53,16 @@ DEBUG_TOWER_START = 49
 #       something fails. Maybe we can do a replay of sorts
 # TODO: Maybe make it only level traits on even and skills on odd levels
 # TODO: Bug: Can set the cursor position in text fields messing up the log
-# TODO: Limit damage in one hit to 9999 for coolness factor?
-#       (Excepting Final Strike probably)
-# TODO: Bug: Button labels are not fully displayed
 
 # Game Balance notes:
 # -- Magical/Physical seems to matter very little. Probably having a physical
 #    weapon should not help magical attacks and vice-versa
-# -- Make some sort of libra thing
 # -- Swiftness might be OP, not sure yet.
 # -- Might make random interesting events happen more in Infinity Dungeon
-
+# To Test:
+# -- Drain, Bulk Up, Final Strike
+# -- Any real physical build
+# -- A speed build (Swiftness/Drain/?)
 
 class GameState(object):
   """

@@ -277,7 +277,7 @@ class Drain(Skill):
   def get_name(self):
     return "Drain"
   def get_attack_multiple(self):
-    return 1.0 + 0.2 * self.level
+    return 1.0 + 0.1 * self.level
   def get_description(self):
     desc = "Magical attack with %.2f multiplier. Gains some HP."
     desc = desc % self.get_attack_multiple()
@@ -319,7 +319,7 @@ class ChainLightning(Skill):
   def get_name(self):
     return "Chain Lightning"
   def get_attack_multiple(self):
-    return 1.0 + 0.1 * self.level
+    return 1.0 + 0.15 * self.level
   def get_repeat_chance(self):
     return 1.0 - (0.75 ** self.level)
   def get_description(self):
@@ -344,14 +344,13 @@ class FinalStrike(Skill):
   def get_description(self):
     return "Magical and physical attack. Uses all HP and SP"
   def sp_cost(self):
-    return 0
+    return int(self.level * 6 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
-    multiplier = (actor.current_sp / 100.0) + 1.0
-    multiplier += (actor.current_hp / 250.0)
-    multiplier *= 1.0 + (0.2 * self.level)
-    Combat.action_attack(None, actor, opponent, logs, "Magic", multiplier)
-    result = Combat.action_attack(None, actor, opponent, logs, "Physical",
-                                  multiplier)
+    base_damage = actor.current_hp - 1
+    base_damage += (actor.current_sp * 3)
+    base_damage *= 1.0 + (0.1 * self.level)
+    result = Combat.action_attack(None, actor, opponent, logs, "Magic", 
+                                  base_damage=base_damage)
     actor.current_sp = 0
     actor.current_hp = 1
     return result
