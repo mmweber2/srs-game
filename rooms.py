@@ -613,7 +613,18 @@ class Alchemist(Room):
     self.level = level
     self.faction_rate = 1.0
     self.possible_items = [items.MinorHealthPotion, items.MajorHealthPotion,
-                           items.HealthPotion, items.SuperHealthPotion]
+                           items.HealthPotion, items.SuperHealthPotion,
+                           items.MagicPotion, items.MinorMagicPotion,
+                           items.MajorMagicPotion,
+                           items.SurgePotion, items.MajorSurgePotion,
+                           items.MinorSurgePotion,
+                           items.SwiftnessPotion, items.MajorSwiftnessPotion,
+                           items.MinorSwiftnessPotion,
+                           items.BulkUpPotion, items.MajorBulkUpPotion,
+                           items.MinorBulkUpPotion,
+                           items.ConcentratePotion, 
+                           items.MajorConcentratePotion,
+                           items.MinorConcentratePotion]
     self.inventory = self.generate_inventory()
 
   def item_rate(self, item):

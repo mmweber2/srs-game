@@ -223,7 +223,6 @@ class Wither(Debuff):
       impacts[stat] = impact
     return impacts
 
-  # START HERE: Wither is not stacking properly
   def update(self, buff):
     """Returns True if buff is the same kind, False otherwise."""
     # Update the duration and effects of this buff, using the new buff.

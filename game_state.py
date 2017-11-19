@@ -34,9 +34,11 @@ DEBUG_FLOOR = 1
 DEBUG_BUILDING = None
 DEBUG_GOLD = None
 DEBUG_CHARACTER = None
-#DEBUG_BUILDING = rooms.TrainingRoom
-#DEBUG_GOLD = 1000
-DEBUG_CHARACTER = 100
+DEBUG_TOWER_START = None
+DEBUG_BUILDING = rooms.Alchemist
+DEBUG_FLOOR = 49
+DEBUG_GOLD = 1000000
+DEBUG_CHARACTER = 50
 DEBUG_TOWER_START = 49
 
 # TODO: http://www.pyinstaller.org/ to get packages
@@ -51,7 +53,6 @@ DEBUG_TOWER_START = 49
 #       to skip past (levelling up, finding a shop in a tower, etc)
 # TODO: Add some more extensive logging that gets written to disk in case
 #       something fails. Maybe we can do a replay of sorts
-# TODO: Maybe make it only level traits on even and skills on odd levels
 
 # Game Balance notes:
 # -- Magical/Physical seems to matter very little. Probably having a physical

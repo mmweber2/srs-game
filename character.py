@@ -3,6 +3,7 @@ import collections
 from skills import SKILLS, SKILL_NAMES
 from equipment import Equipment, RARITY
 from effect import Effect, Buff, Debuff
+import items
 
 STAT_ORDER = ["Strength", "Intellect", "Speed", "Stamina", "Defense",
               "Magic Defense"]
@@ -37,6 +38,8 @@ class Character(object):
     # Weapon, Helm, Chest, Legs, Accessory
     self.equipment = [None, None, None, None, None]
     self.items = []
+    # DEBUG
+    self.items = [items.BulkUpPotion(), items.MajorBulkUpPotion(), items.MinorBulkUpPotion()]
     self.skills = []
     self.stats = {"Strength": 20, "Stamina": 20, "Defense": 20, "Speed": 20,
                   "Intellect": 20, "Magic Defense": 20}
