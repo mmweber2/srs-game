@@ -52,7 +52,6 @@ DEBUG_TOWER_START = 49
 # TODO: Add some more extensive logging that gets written to disk in case
 #       something fails. Maybe we can do a replay of sorts
 # TODO: Maybe make it only level traits on even and skills on odd levels
-# TODO: Bug: Can set the cursor position in text fields messing up the log
 
 # Game Balance notes:
 # -- Magical/Physical seems to matter very little. Probably having a physical

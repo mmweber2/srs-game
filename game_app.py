@@ -11,6 +11,7 @@ def write_color_text(rtc, string):
   # Colors are specified via `r,g,b` in the text
   # Note: Assumes there are no "`" in the text.
   tokens = string.split("`")
+  rtc.SetInsertionPoint(rtc.GetLastPosition())
   rtc.BeginTextColour((0, 0, 0))
   rtc.BeginParagraphSpacing(0, 0)
   rtc.WriteText(tokens.pop(0))
