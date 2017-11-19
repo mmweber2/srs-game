@@ -30,6 +30,7 @@ class Combat(object):
     else:
       next_turn = cls.get_next_actor(character, monster)
 
+    combobreaker_chance = 0.0
     while next_turn == cls.MONSTER_TURN:
       if Effect.get_combined_impact("Stunned", monster.buffs,
                                     monster.debuffs) > 0:
@@ -63,6 +64,12 @@ class Combat(object):
       elif result == cls.ACTOR_ESCAPED:
         return cls.MONSTER_ESCAPED
       next_turn = cls.get_next_actor(character, monster)
+      # Combobreaker
+      if next_turn == cls.MONSTER_TURN:
+        if random.random() < combobreaker_chance:
+          next_turn = cls.CHARACTER_TURN
+          logs.append("Combobreaker! prevented the next enemy turn")
+      combobreaker_chance += character.traits["Combobreaker!"] / 100.0
     return cls.CHARACTER_TURN
 
   @classmethod
@@ -120,7 +127,8 @@ class Combat(object):
     factor = factor ** .5
     if multiplier:
       factor *= multiplier
-    damage = int(damage * factor)
+    level_factor = 1.02 ** (actor.level - target.level)
+    damage = int(damage * factor * level_factor)
     if Effect.get_combined_impact("Blinded", actor.buffs, actor.debuffs) > 0:
       if random.random() < .5:
         logs.append("Misses due to Blindness")

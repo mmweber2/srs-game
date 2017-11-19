@@ -23,12 +23,11 @@ CHOICES = {"CHAR_CREATE": ["Strength", "Stamina", "Speed", "Intellect"],
                       "Descend Tower"],
            "STRONGHOLD": ["Enter Room", "Rest", "Item", "Leave Stronghold"],
            "DUNGEON": ["Explore", "Rest", "Item", "Leave Dungeon"],
-           "COMBAT": ["Attack", "Skill", "Item", "Escape"],
            "LOOT_EQUIPMENT": ["", "Keep Current", "Keep New", ""],
            "VICTORY": [""] * 4,
            "ACCEPT_QUEST": ["", "Accept Quest", "Decline Quest", ""]}
 
-TOWER_LEVELS = 100
+TOWER_LEVELS = 50
 UPDATE_TIME = 360
 DEBUG_FLOOR = 1
 DEBUG_BUILDING = None
@@ -36,8 +35,10 @@ DEBUG_GOLD = None
 DEBUG_CHARACTER = None
 #DEBUG_BUILDING = rooms.TrainingRoom
 #DEBUG_GOLD = 1000
-#DEBUG_CHARACTER = 100
+#DEBUG_CHARACTER = 60
+DEBUG_TOWER_START = 49
 
+# TODO: http://www.pyinstaller.org/ to get packages
 # TODO: Add menu choice to restart game
 # TODO: It is probably not best to be passing logs around to everything?
 #       it could be part of the GameState, or we could use a logger for real
@@ -59,13 +60,9 @@ DEBUG_CHARACTER = None
 # Game Balance notes:
 # -- Magical/Physical seems to matter very little. Probably having a physical
 #    weapon should not help magical attacks and vice-versa
-# TODO: Disallow running from bosses
-# -- Possibly modify damage a small amount depending on level difference?
-#   -- Also possibly skill checks. Something like 1.01 ** level difference
-# -- Make rune world mobs bosses
-# -- Implement c-c-c-combobreaker (START HERE)
-# -- Make tower 50 levels? 100 is... a lot (START HERE) (also test)
 # -- Make some sort of libra thing
+# -- Swiftness might be OP, not sure yet.
+# -- Might make random interesting events happen more in Infinity Dungeon
 
 
 class GameState(object):
@@ -107,11 +104,11 @@ class GameState(object):
     self.skillups = 0
     self.skills_used = set()
     self.infinity_dungeon = False
-    # DEBUG:
-    #self.frontier = 99
-    #for i in range(self.frontier):
-    #  self.tower_lock[i] = False
-    #self.floor = 99
+    if DEBUG_TOWER_START:
+      self.frontier = DEBUG_TOWER_START
+      self.floor = 49
+      for i in range(self.frontier):
+        self.tower_lock[i] = False
 
   ###
   # Helper methods for changing state
@@ -195,6 +192,11 @@ class GameState(object):
         return ["Complete Quest", "", "", "Leave Quest"]
       else:
         return ["Continue Quest", "Rest", "Item", "Leave Quest"]
+    elif current_state == "COMBAT":
+      if self.monster.boss:
+        return ["Attack", "Skill", "Item", ""]
+      else:
+        return ["Attack", "Skill", "Item", "Escape"]
     elif current_state == "USE_ITEM":
       choices = []
       for i in range(len(self.character.items)):
@@ -287,9 +289,10 @@ class GameState(object):
     logs.append("Generated %s equipment." % choice_text)
     self.change_state("TOWN")
 
-  def start_combat(self, logs, boss, level=None):
+  def start_combat(self, logs, boss_chance, level=None):
     if level is None:
       level = self.floor
+    boss = random.random() < boss_chance
     self.add_state("COMBAT")
     self.monster = Monster(level, boss)
     logs.append("You have encountered a monster")
@@ -297,7 +300,7 @@ class GameState(object):
   def apply_choice_rune_world(self, logs, choice_text):
     if choice_text == "Explore":
       self.rune_level += 1
-      self.start_combat(logs, True, level=self.rune_level)
+      self.start_combat(logs, .1, level=self.rune_level)
     elif choice_text == "Item":
       self.pass_time(0, logs)
       self.add_state("USE_ITEM")
@@ -377,7 +380,7 @@ class GameState(object):
   def apply_choice_stronghold(self, logs, choice_text):
     if choice_text == "Enter Room":
       level = TOWER_LEVELS - 20 + (self.stronghold_room * 5)
-      self.start_combat(logs, True, level=level)
+      self.start_combat(logs, 1.0, level=level)
     elif choice_text == "Rest":
       self.pass_time(5, logs)
       logs.append("You rest")
@@ -413,12 +416,12 @@ class GameState(object):
           logs.append("You find a treasure chest")
           self.find_treasure(logs, 1)
         elif random_number < .165:
-          self.start_combat(logs, True)  # Boss monster
+          self.start_combat(logs, 1.0)  # Boss monster
         else:
-          self.start_combat(logs, False)
+          self.start_combat(logs, 0.0)
       elif self.ascension_encounters == 0:
         self.ascension_encounters -= 1
-        self.start_combat(logs, True)  # Floor boss
+        self.start_combat(logs, 1.0)  # Floor boss
       else:
         assert self.ascension_encounters == -1
         self.floor += 1
@@ -436,7 +439,7 @@ class GameState(object):
       hp_gained = self.character.rest()
       logs.append("You regain %d HP" % hp_gained)
       if random.random() < .2:
-        self.start_combat(logs, False)
+        self.start_combat(logs, .1)
     elif choice_text == "Item":
       self.pass_time(0, logs)
       self.add_state("USE_ITEM")
@@ -474,14 +477,14 @@ class GameState(object):
         logs.append("You find a treasure chest")
         self.find_treasure(logs, 1)
       else:
-        self.start_combat(logs, False)
+        self.start_combat(logs, .1)
     elif choice_text == "Rest":
       self.pass_time(5, logs)
       logs.append("You rest")
       hp_gained = self.character.rest()
       logs.append("You regain %d HP" % hp_gained)
       if random.random() < .2:
-        self.start_combat(logs, False)
+        self.start_combat(logs, .1)
     elif choice_text == "Item":
       self.pass_time(0, logs)
       self.add_state("USE_ITEM")
@@ -793,7 +796,7 @@ class GameState(object):
     elif current_state == "TOWER":
       return "Inside the tower ascending to level %d" % (self.floor + 1)
     elif current_state == "COMBAT":
-      return str(self.monster)
+      return self.monster.libra_string(self.character.traits["Libra"])
     elif current_state == "LOOT_EQUIPMENT":
       return self.loot_choice_text()
     elif current_state == "ACCEPT_QUEST" or current_state == "QUEST":

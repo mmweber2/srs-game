@@ -18,18 +18,16 @@ TRAITS = {"Beefy!": "Increase physical damage",
           "Regeneration": "HP regeneration over time",
           "Stocky!": "Reduce physical damage",
           "Mental Toughness": "Reduce magical damage",
+          "Combobreaker!": "Chance to prevent multiple consecutive enemy turns",
+          "Libra": "See monster stats",
          }
 
 
 # TRAITS:
-# TODO: To implement: Scholar
 # TODO: There are more on the sheet
 # -- Increased Stats
 # -- Lightning Strike (chance to automatically go again after an attack)
 # -- Dodge (chance to avoid all damage from an attack)
-# -- Repeated Valor (chance to have once-per-battle skills refresh per turn)
-# -- Durable (Chance to resist debuffs)
-# -- OHKO resist (Chance to resist any attack that does more than Max HP)
 # -- C-c-c-combobreaker (Chance to prevent opponent getting multiple turns)
 # -- Libra (See monster stats... with some percent chance? accuracy?)
 # TODO: General resist damage trait?
@@ -317,6 +315,8 @@ class Character(object):
       for trait in TRAITS:
         rerolls = self.traits[trait] + 1
         roll = min(random.random() for _ in range(rerolls))
+        if trait == "Libra" and self.traits[trait] > 0:  # Only one libra level
+          roll = 0.0
         if roll > best_roll:
           best_roll, best_trait = roll, trait
       if best_trait not in choices:

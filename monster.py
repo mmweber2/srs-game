@@ -3,6 +3,9 @@ import random
 from equipment import Equipment
 from effect import Debuff, Effect
 
+STAT_ORDER = ["Strength", "Intellect", "Speed", "Stamina", "Defense",
+              "Magic Defense"]
+
 # TODO: Should Monster and Character subclass from something?
 NORMAL_CHANCES = [0.0, 0.2, 0.04, 0.008, 0.00016]
 BOSS_CHANCES = [0.0, 0.4, 0.16, 0.064, 0.0256]
@@ -60,8 +63,25 @@ class Monster(object):
   def add_debuff(self, new_debuff):
     Debuff.add_debuff(self.debuffs, new_debuff)
 
+  def libra_string(self, libra_level):  
+    pieces = []
+    pieces.append("Name: %s\n" % self.name)
+    # TODO: Add level and boss indicator
+    pieces.append("HP: %s\n" % self.hp_string())
+    pieces.append("Debuffs: ")
+    pieces.append(", ".join(str(debuff) for debuff in self.debuffs))
+    if self.debuffs:
+      pieces.append("\n")
+    else:
+      pieces.append("None\n")
+    if libra_level > 0:
+      for stat in STAT_ORDER:
+        pieces.append("%s: %d (%d)  " % (stat, self.get_effective_stat(stat),
+                                         self.stats[stat]))
+        pieces.append("\n")
+    return "".join(pieces)
+
   def __str__(self):
-    debug = True
     pieces = []
     pieces.append("Name: %s\n" % self.name)
     pieces.append("HP: %s\n" % self.hp_string())
@@ -71,15 +91,14 @@ class Monster(object):
       pieces.append("\n")
     else:
       pieces.append("None\n")
-    if debug:
-      pieces.append("***DEBUG***\n")
-      for stat in self.stats:
-        pieces.append("%s: %d (%d)  " % (stat, self.get_effective_stat(stat),
-                                         self.stats[stat]))
-        pieces.append("\n")
-      pieces.append("stats: %r\n" % self.stats)
-      pieces.append("HP: %d / %d\n" % (self.current_hp, self.max_hp))
-      pieces.append("XP value: %d\n" % self.calculate_exp())
+    pieces.append("***DEBUG***\n")
+    for stat in self.stats:
+      pieces.append("%s: %d (%d)  " % (stat, self.get_effective_stat(stat),
+                                       self.stats[stat]))
+      pieces.append("\n")
+    pieces.append("stats: %r\n" % self.stats)
+    pieces.append("HP: %d / %d\n" % (self.current_hp, self.max_hp))
+    pieces.append("XP value: %d\n" % self.calculate_exp())
     return "".join(pieces)
 
   def calculate_exp(self):

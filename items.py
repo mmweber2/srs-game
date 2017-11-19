@@ -52,7 +52,7 @@ class MajorHealthPotion(Item):
 class SuperHealthPotion(Item):
   def __init__(self):
     super(SuperHealthPotion, self).__init__()
-    self.info = {"name": "Major HP Pot",
+    self.info = {"name": "Super HP Pot",
                  "value": 100000,
                  "item_level": 60}
   def apply(self, character, monster, logs):

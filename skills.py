@@ -285,8 +285,8 @@ class Drain(Skill):
   def sp_cost(self):
     return int(self.level * 5 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
-    drain_base = (actor.get_effective_stat("Intellect") ** .7) * self.level
-    hp_gained = int(drain_base * self.get_attack_multiple())
+    drain_base = (actor.get_effective_stat("Intellect") * self.level) ** .7
+    hp_gained = int(drain_base)
     result = Combat.action_attack(None, actor, opponent, logs, "Magic",
                                   self.get_attack_multiple())
     actor.restore_hp(hp_gained)
