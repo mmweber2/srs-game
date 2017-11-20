@@ -28,12 +28,10 @@ CHOICES = {"CHAR_CREATE": ["Strength", "Stamina", "Speed", "Intellect"],
            "VICTORY": [""] * 4,
            "ACCEPT_QUEST": ["", "Accept Quest", "Decline Quest", ""]}
 
-EXPLORE_CHANCES = {        #Hoard,Shop,Chest,Boss
-                   "Tower": [.01, .02, .15, .04],
+#                           Hoard,Shop,Chest,Boss
+EXPLORE_CHANCES = {"Tower": [.01, .02, .15, .04],
                    "Dungeon": [.02, .00, .20, .05],
-                   "Infinity Dungeon": [.03, .03, .25, .06],
-                  }
-
+                   "Infinity Dungeon": [.03, .03, .25, .06]}
 TOWER_LEVELS = 50
 UPDATE_TIME = 360
 DEBUG_FLOOR = None
@@ -141,7 +139,7 @@ class GameState(object):
       for shop in shop_set:
         shops.append(shop(level))
       tower.append(shops)
-    if DEBUG_BUILDING:  # pylint: disable=not-callable
+    if DEBUG_BUILDING:
       tower[DEBUG_FLOOR][0] = DEBUG_BUILDING(DEBUG_FLOOR)
     summit_shops = [rooms.Inn(TOWER_LEVELS), rooms.Temple(TOWER_LEVELS),
                     rooms.Crafthall(TOWER_LEVELS)]

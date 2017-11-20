@@ -139,7 +139,7 @@ class Combat(object):
         logs.append("Misses due to Blindness")
         return cls.TARGET_ALIVE
     color_string = "`255,0,0`" if isinstance(actor, Monster) else ""
-    logs.append("%sHits for %d %s damage`0,0,0`" % (color_string, damage, 
+    logs.append("%sHits for %d %s damage`0,0,0`" % (color_string, damage,
                                                     damage_type))
     return cls.apply_damage(target, damage)
 

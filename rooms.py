@@ -695,6 +695,7 @@ class Alchemist(Room):
 
 class Crafthall(Room):
   def __init__(self, level):
+    super(Crafthall, self).__init__(level)
     self.level = level
     self.faction_rate = 1.0  # Ignored
     self.crafting = False
@@ -734,7 +735,7 @@ class Crafthall(Room):
     return min(rarity, 4)
 
   def handle_craft(self, rarity, logs, character):
-    if (character.materials[0] >= self.level and 
+    if (character.materials[0] >= self.level and
         character.materials[rarity] >= self.level and
         character.gold >= 10 * rarity * self.level):
       character.materials[0] -= self.level
@@ -748,7 +749,7 @@ class Crafthall(Room):
     else:
       logs.append("You do not have enough money or materials.")
       self.crafting = False
-      self.shop_choice = None
+      self.crafted_piece = None
       return (0, Room.NO_CHANGE)
 
   def apply_choice(self, choice_text, logs, character):
