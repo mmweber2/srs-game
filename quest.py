@@ -26,11 +26,11 @@ class Quest(object):
   def generate_rewards(self):
     self.treasure_reward += 1
     for _ in xrange(self.treasures - 1):
-      self.xp_reward += random.randint(1, 5 * self.level)
-      if random.random() < .2:
+      self.xp_reward += random.randint(2 * self.level, 5 * self.level)
+      if random.random() < .3:
         self.treasure_reward += 1
       else:
-        self.gp_reward += random.randint(1, 5 * self.level)
+        self.gp_reward += random.randint(2 * self.level, 5 * self.level)
 
   def get_monster(self):
     return self.monsters[0]

@@ -22,9 +22,6 @@ class Equipment(object):
     self.rarity = rarity
     # 0-4, Weapon, Helm, Chest, Legs, Accessory
     self.slot = slot
-    # TODO: Implement damage range for weapons
-    #       Figure out what is reasonable against growing monster stamina
-    #       2-3 hits against a normal monster is probably about right
     self.enchant_count = 0
     self.reforge_count = 0
 
@@ -37,7 +34,6 @@ class Equipment(object):
     pieces.append(str(new))
     pieces.append("\nComparison:\n")
     pieces.append(Equipment.comparison_text(current, new))
-    # TODO: Show difference between two pieces of equipment
     return "".join(pieces)
 
   @classmethod
@@ -211,7 +207,9 @@ class Equipment(object):
     pieces.append(SLOTS[self.slot])
     pieces.append(": ")
     pieces.append(RARITY_COLORS[self.rarity])
-    pieces.append("(%d %s) " % (self.item_level, RARITY[self.rarity][0]))
+    pieces.append("(%d%s %s) " % (self.item_level,
+                                  "*" * self.enchant_count,
+                                  RARITY[self.rarity][0]))
     if SLOTS[self.slot] == "Weapon":
       pieces.append("(%s %d-%d) " % (self.attributes["Type"],
                                      self.attributes["Low"],

@@ -62,30 +62,15 @@ DEBUG_TOWER_START = None
 #       Maybe one for name, too, eh?
 
 # Game Balance notes:
-# -- Magical/Physical seems to matter very little. Probably having a physical
-#    weapon should not help magical attacks and vice-versa
 # -- Swiftness might be OP, not sure yet.
-# -- Might make random interesting events happen more in Infinity Dungeon
 # To Test:
 # -- Drain, Bulk Up, Final Strike
 # -- Any real physical build
 # -- A speed build (Swiftness/Drain/?)
-# -- Possibly make damage range a part of the monster instead of the same for
-#    all. Could apply XP to it, as well.
-# -- In combat, put character HP on the left panel as well. Maybe some bars too
-# -- Insert skills in position 0, so they stay in the same spot when you gain
-#    a new one
 # -- Re-evaluate resting in the Infinity Dungeon
 # -- Make it so dying in a quest and dungeon takes less time than in the Tower
 #    That allows the player to use the quest as a guide to whether they should
 #    attempt the tower, somewhat.
-# -- Add an indicator to armor to show how much it has been enchanted
-# -- Color damage from monsters
-# -- Re-evaluate quest rewards
-# -- There seems to be some lag later in the game. Check to see if it's related
-#    to the log area getting so long
-# -- Make the town on the top level either static (temple/inn/?) or change
-#    every tower refresh
 
 class GameState(object):
   """
@@ -825,7 +810,8 @@ class GameState(object):
     elif current_state == "TOWER":
       return "Inside the tower ascending to level %d" % (self.floor + 1)
     elif current_state == "COMBAT":
-      return self.monster.libra_string(self.character.traits["Libra"])
+      libra_string = self.monster.libra_string(self.character.traits["Libra"])
+      return "Your HP: %s\n\n%s" % (self.character.colored_hp(), libra_string)
     elif current_state == "LOOT_EQUIPMENT":
       return self.loot_choice_text()
     elif current_state == "ACCEPT_QUEST" or current_state == "QUEST":

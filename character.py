@@ -23,6 +23,11 @@ TRAITS = {"Beefy!": "Increase physical damage",
           "Libra": "See monster stats",
          }
 
+GREEN_HP = "`0,160,0`"
+YELLOW_HP = "`200,200,0`"
+ORANGE_HP = "`224,136,20`"
+RED_HP = "`255,0,0`"
+BLACK = "`0,0,0`"
 
 # TRAITS:
 # TODO: There are more on the sheet
@@ -57,6 +62,18 @@ class Character(object):
     self.runes = 0
     self.traits = collections.defaultdict(int)
     self.reroll_counter = 0
+
+  def colored_hp(self):
+    hp_percent = self.current_hp * 100 / self.max_hp
+    if hp_percent > 75:
+      color = GREEN_HP
+    elif hp_percent > 50:
+      color = YELLOW_HP
+    elif hp_percent > 25:
+      color = ORANGE_HP
+    else:
+      color = RED_HP
+    return "%s%d / %d%s" % (color, self.current_hp, self.max_hp, BLACK)
 
   @classmethod
   def debug_character(cls, level, choice_text):
@@ -389,11 +406,12 @@ class Character(object):
     else:
       assert len(self.skills) < 3
       new_skill = None
+      # TODO: Use a dictionary
       for skill in SKILLS:
         skill_instance = skill()
         if skill_instance.get_name() == skill_name:
           new_skill = skill_instance
-      self.skills.append(new_skill)
+      self.skills.insert(0, new_skill)
       return True
 
   def gain_exp(self, exp, encounter_level, logs, level_adjust=True):

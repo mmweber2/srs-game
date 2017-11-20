@@ -1,5 +1,6 @@
 import random
 from effect import Effect
+from monster import Monster
 
 class Combat(object):
   CHARACTER_DEAD = 0
@@ -128,6 +129,8 @@ class Combat(object):
     factor = factor ** .5
     if multiplier:
       factor *= multiplier
+    if damage_type != actor.get_damage_type():
+      factor *= .5   # Weapon is the wrong kind
     level_factor = 1.02 ** (actor.level - target.level)
     damage = int(damage * factor * level_factor)
     if damage > 9999: damage = 9999
@@ -135,7 +138,9 @@ class Combat(object):
       if random.random() < .5:
         logs.append("Misses due to Blindness")
         return cls.TARGET_ALIVE
-    logs.append("Hits for %d %s damage" % (damage, damage_type))
+    color_string = "`255,0,0`" if isinstance(actor, Monster) else ""
+    logs.append("%sHits for %d %s damage`0,0,0`" % (color_string, damage, 
+                                                    damage_type))
     return cls.apply_damage(target, damage)
 
   @classmethod
