@@ -69,10 +69,27 @@ class LogPanel(wx.Panel):
     bsizer = wx.BoxSizer()
     bsizer.Add(self.text_field, 1, wx.EXPAND)
     self.SetSizerAndFit(bsizer)
+    time_string = time.strftime("%m%d%y_%H%M%S", time.localtime())
+    self.filename = "srs_game_%s.log" % time_string
+    self.filehandle = open(self.filename, "w")
+    self.max_length = 16384
 
   def add_entry(self, text):
     line = time.strftime("%m/%d/%y %H:%M:%S: ", time.localtime()) + text + "\n"
     write_color_text(self.text_field, line)
+    self.filehandle.write(line)
+    self.filehandle.flush()
+    length = self.text_field.GetLastPosition()
+    if length > self.max_length:
+      # The text field lags on add if there is too much text. Keep it to a
+      # reasonable size
+      print "Truncated log"
+      position = self.text_field.GetLastPosition() - (self.max_length / 2)
+      new_line_position = self.text_field.GetValue().find("\n", position)
+      if new_line_position == -1:
+        new_line_position = position
+      self.text_field.Remove(0, new_line_position + 1)
+
 
 class EncounterPanel(wx.Panel):
   def __init__(self, parent):
@@ -181,6 +198,7 @@ class MainWindow(wx.Frame):
                                                        time_left), 3)
 
   def on_exit(self, evt):  # pylint: disable=unused-argument
+    self.log_panel.filehandle.close()
     self.Close(True)
 
   def set_labels(self, labels):
