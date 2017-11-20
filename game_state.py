@@ -11,11 +11,11 @@ import skills
 
 TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                   rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
-                  rooms.Inn, rooms.WeaponShop, rooms.Dungeon]
+                  rooms.Inn, rooms.WeaponShop, rooms.Dungeon, rooms.Crafthall]
 
 TOWER_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                    rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
-                   rooms.Inn, rooms.WeaponShop]
+                   rooms.Inn, rooms.WeaponShop, rooms.Crafthall]
 
 CHOICES = {"CHAR_CREATE": ["Strength", "Stamina", "Speed", "Intellect"],
            "RUNE_WORLD": ["Explore", "", "Item", "Leave Rune"],
@@ -28,32 +28,38 @@ CHOICES = {"CHAR_CREATE": ["Strength", "Stamina", "Speed", "Intellect"],
            "VICTORY": [""] * 4,
            "ACCEPT_QUEST": ["", "Accept Quest", "Decline Quest", ""]}
 
+EXPLORE_CHANCES = {        #Hoard,Shop,Chest,Boss
+                   "Tower": [.01, .02, .15, .04],
+                   "Dungeon": [.02, .00, .20, .05],
+                   "Infinity Dungeon": [.03, .03, .25, .06],
+                  }
+
 TOWER_LEVELS = 50
 UPDATE_TIME = 360
-DEBUG_FLOOR = 1
+DEBUG_FLOOR = None
 DEBUG_BUILDING = None
 DEBUG_GOLD = None
 DEBUG_CHARACTER = None
 DEBUG_TOWER_START = None
-DEBUG_BUILDING = rooms.Alchemist
-DEBUG_FLOOR = 49
-DEBUG_GOLD = 1000000
-DEBUG_CHARACTER = 50
-DEBUG_TOWER_START = 49
+
+#DEBUG_BUILDING = rooms.Crafthall
+#DEBUG_FLOOR = 1
+#DEBUG_GOLD = 100000
+#DEBUG_CHARACTER = 50
+#DEBUG_TOWER_START = 49
 
 # TODO: http://www.pyinstaller.org/ to get packages
 # TODO: Add menu choice to restart game
 # TODO: It is probably not best to be passing logs around to everything?
 #       it could be part of the GameState, or we could use a logger for real
-# TODO: Need a use for common materials
-# TODO: Need a use for materials in general. Probably something to create
-#       armor/weapons. Could create a random item of floor + (1d6)ish levels
-#       (START HERE)
 # TODO: add traits to weapons/armor
 # TODO: Add an "acknowledgement" state, to make certain uncommon states harder
 #       to skip past (levelling up, finding a shop in a tower, etc)
 # TODO: Add some more extensive logging that gets written to disk in case
 #       something fails. Maybe we can do a replay of sorts
+# TODO: Add a few options boxes. One in particular to "value" stats, so you can
+#       quickly get a value for whether a piece of equipment is better or not
+#       Maybe one for name, too, eh?
 
 # Game Balance notes:
 # -- Magical/Physical seems to matter very little. Probably having a physical
@@ -64,6 +70,22 @@ DEBUG_TOWER_START = 49
 # -- Drain, Bulk Up, Final Strike
 # -- Any real physical build
 # -- A speed build (Swiftness/Drain/?)
+# -- Possibly make damage range a part of the monster instead of the same for
+#    all. Could apply XP to it, as well.
+# -- In combat, put character HP on the left panel as well. Maybe some bars too
+# -- Insert skills in position 0, so they stay in the same spot when you gain
+#    a new one
+# -- Re-evaluate resting in the Infinity Dungeon
+# -- Make it so dying in a quest and dungeon takes less time than in the Tower
+#    That allows the player to use the quest as a guide to whether they should
+#    attempt the tower, somewhat.
+# -- Add an indicator to armor to show how much it has been enchanted
+# -- Color damage from monsters
+# -- Re-evaluate quest rewards
+# -- There seems to be some lag later in the game. Check to see if it's related
+#    to the log area getting so long
+# -- Make the town on the top level either static (temple/inn/?) or change
+#    every tower refresh
 
 class GameState(object):
   """
@@ -126,7 +148,7 @@ class GameState(object):
   def generate_towns():
     # Level 0 does not exist
     tower = [None]
-    for level in range(1, TOWER_LEVELS + 1):
+    for level in range(1, TOWER_LEVELS):
       shop_set = set()
       while len(shop_set) < 3:
         shop_set.add(random.choice(TOWN_BUILDINGS))
@@ -136,11 +158,14 @@ class GameState(object):
       tower.append(shops)
     if DEBUG_BUILDING:  # pylint: disable=not-callable
       tower[DEBUG_FLOOR][0] = DEBUG_BUILDING(DEBUG_FLOOR)
+    summit_shops = [rooms.Inn(TOWER_LEVELS), rooms.Temple(TOWER_LEVELS),
+                    rooms.Crafthall(TOWER_LEVELS)]
+    tower.append(summit_shops)
     return tower
 
   def tower_update(self):
     self.tower_quests = self.generate_quests()
-    for level in xrange(1, 101):
+    for level in xrange(1, TOWER_LEVELS + 1):
       for shop in range(3):
         self.towns[level][shop].refresh()
 
@@ -395,31 +420,39 @@ class GameState(object):
       logs.append("You leave the Stronghold of the Ten")
       self.leave_state()
 
+  def handle_explore(self, logs, explore_type):
+    chances = EXPLORE_CHANCES[explore_type]
+    random_number = random.random()
+    if random_number < chances[0]:
+      logs.append("You find a treasure hoard!")
+      self.find_treasure(logs, 8)
+    elif random_number < sum(chances[0:2]):
+      logs.append("You find a shop")
+      self.character.restore_hp()
+      self.character.restore_sp()
+      shop = random.choice(TOWER_BUILDINGS)(self.floor)
+      self.add_state("SHOP")
+      self.current_shop = shop
+      if self.floor > TOWER_LEVELS:  # Infinity Dungeon
+        faction = 1.0
+      else:
+        faction = self.tower_faction[self.floor]
+      shop.enter_shop(faction)
+    elif random_number < sum(chances[0:3]):
+      logs.append("You find a treasure chest")
+      self.find_treasure(logs, 1)
+    elif random_number < sum(chances):
+      self.start_combat(logs, 1.0)  # Boss monster
+    else:
+      self.start_combat(logs, 0.0)
+
   def apply_choice_tower(self, logs, choice_text):
     if choice_text == "Explore":
       self.pass_time(random.randint(1, 10), logs)
       logs.append("You explore the tower...")
       if self.ascension_encounters > 0:
         self.ascension_encounters -= 1
-        random_number = random.random()
-        if random_number < .01:
-          logs.append("You find a treasure hoard!")
-          self.find_treasure(logs, 8)
-        elif random_number < .025:
-          logs.append("You find a shop")
-          self.character.restore_hp()
-          self.character.restore_sp()
-          shop = random.choice(TOWER_BUILDINGS)(self.floor)
-          self.add_state("SHOP")
-          self.current_shop = shop
-          shop.enter_shop(self.tower_faction[self.floor])
-        elif random_number < .125:
-          logs.append("You find a treasure chest")
-          self.find_treasure(logs, 1)
-        elif random_number < .165:
-          self.start_combat(logs, 1.0)  # Boss monster
-        else:
-          self.start_combat(logs, 0.0)
+        self.handle_explore(logs, "Tower")
       elif self.ascension_encounters == 0:
         self.ascension_encounters -= 1
         self.start_combat(logs, 1.0)  # Floor boss
@@ -470,15 +503,10 @@ class GameState(object):
         self.floor += 1
       self.pass_time(random.randint(1, 5), logs)
       logs.append("You explore the dungeon...")
-      random_number = random.random()
-      if random_number < .02:
-        logs.append("You find a treasure hoard!")
-        self.find_treasure(logs, 8)
-      elif random_number < .20:
-        logs.append("You find a treasure chest")
-        self.find_treasure(logs, 1)
+      if self.infinity_dungeon:
+        self.handle_explore(logs, "Infinity Dungeon")
       else:
-        self.start_combat(logs, .1)
+        self.handle_explore(logs, "Dungeon")
     elif choice_text == "Rest":
       self.pass_time(5, logs)
       logs.append("You rest")
@@ -736,7 +764,8 @@ class GameState(object):
     try:
       method = getattr(GameState, method_name)
       method(self, logs, choice_text)
-    except AttributeError as exc:
+    #except AttributeError as exc:
+    except IOError as exc:
       print exc  # pylint: disable=print-statement
       logs.append("apply_choice not implemented yet, state: %s" % current_state)
     return logs

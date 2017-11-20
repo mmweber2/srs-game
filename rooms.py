@@ -577,7 +577,7 @@ class Temple(Room):
   def get_text(self, character):
     pieces = []
     pieces.append("Blessing: (%dg) Blessed buff" % (self.get_blessing_cost()))
-    pieces.append("Purify Rune: Not implemented yet")
+    pieces.append("Purify Rune: Enter the rune world to cleanse a rune")
     return "\n".join(pieces)
 
   def get_blessing_cost(self):
@@ -691,6 +691,98 @@ class Alchemist(Room):
     assert False
 
   def enter_shop(self, faction_rate):
+    self.faction_rate = faction_rate
+
+class Crafthall(Room):
+  def __init__(self, level):
+    self.level = level
+    self.faction_rate = 1.0  # Ignored
+    self.crafting = False
+    self.crafted_piece = None
+
+  @classmethod
+  def get_name(cls):
+    return "Crafthall"
+
+  def get_buttons(self, character):
+    if self.crafting:
+      return ["", "Keep Current", "Keep New", ""]
+    else:
+      return ["Craft Uncommon", "Craft Rare", "Craft Epic", "Leave Shop"]
+
+  def get_text(self, character):
+    if self.crafting:
+      equip = self.crafted_piece
+      slot = equip.slot
+      return Equipment.equipment_comparison_text(character.equipment[slot],
+                                                 equip)
+    else:
+      pieces = []
+      pieces.append("Craft Uncommon: %d gold, %d common mats, %d uncommon mats"
+                    % (self.level * 10, self.level, self.level))
+      pieces.append("Craft Rare: %d gold, %d common mats, %d rare mats"
+                    % (self.level * 20, self.level, self.level))
+      pieces.append("Craft Epic: %d gold, %d common mats, %d epic mats"
+                    % (self.level * 30, self.level, self.level))
+      return "\n".join(pieces)
+
+  @classmethod
+  def get_craft_rarity(cls, starting_rarity):
+    rarity = starting_rarity
+    while random.random() < .1:
+      rarity += 1
+    return min(rarity, 4)
+
+  def handle_craft(self, rarity, logs, character):
+    if (character.materials[0] >= self.level and 
+        character.materials[rarity] >= self.level and
+        character.gold >= 10 * rarity * self.level):
+      character.materials[0] -= self.level
+      character.materials[rarity] -= self.level
+      character.gold -= 10 * rarity * self.level
+      rarity = self.get_craft_rarity(rarity)
+      self.crafting = True
+      level = int(self.level + max(0, random.gauss(0, 1)))
+      self.crafted_piece = Equipment.get_new_armor(level, rarity=rarity)
+      return (3, Room.NO_CHANGE)
+    else:
+      logs.append("You do not have enough money or materials.")
+      self.crafting = False
+      self.shop_choice = None
+      return (0, Room.NO_CHANGE)
+
+  def apply_choice(self, choice_text, logs, character):
+    if choice_text == "Keep Current":
+      recycle = self.crafted_piece
+      self.crafted_piece = None
+      self.crafting = False
+      logs.append("Recycled %s" % recycle)
+      materials = recycle.get_recycled_materials()
+      character.gain_materials(materials)
+      logs.append("Received %s" % Equipment.materials_string(materials))
+      return (0, Room.NO_CHANGE)
+    elif choice_text == "Keep New":
+      equipment = self.crafted_piece
+      recycle = character.equip(equipment)
+      self.crafted_piece = None
+      self.crafting = False
+      logs.append("Recycled %s" % recycle)
+      materials = recycle.get_recycled_materials()
+      character.gain_materials(materials)
+      logs.append("Received %s" % Equipment.materials_string(materials))
+      return (0, Room.NO_CHANGE)
+    elif choice_text == "Craft Uncommon":
+      return self.handle_craft(1, logs, character)
+    elif choice_text == "Craft Rare":
+      return self.handle_craft(2, logs, character)
+    elif choice_text == "Craft Epic":
+      return self.handle_craft(3, logs, character)
+    elif choice_text == "Leave Shop":
+      return (0, Room.LEAVE_ROOM)
+
+  def enter_shop(self, faction_rate):
+    self.crafting = False
+    self.crafted_piece = None
     self.faction_rate = faction_rate
 
 class Dungeon(Room):
