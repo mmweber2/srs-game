@@ -109,7 +109,7 @@ class MinorSurgePotion(Item):
                  "value": 100,
                  "item_level": 1}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.Surge(5))
+    character.add_buff(effect.Surge(5, 1.5))
     logs.append("You gain the Surge buff")
 
 class SurgePotion(Item):
@@ -119,7 +119,7 @@ class SurgePotion(Item):
                  "value": 500,
                  "item_level": 10}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.Surge(10))
+    character.add_buff(effect.Surge(10, 2.0))
     logs.append("You gain the Surge buff")
 
 class MajorSurgePotion(Item):
@@ -129,7 +129,7 @@ class MajorSurgePotion(Item):
                  "value": 2500,
                  "item_level": 30}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.Surge(15))
+    character.add_buff(effect.Surge(15, 2.5))
     logs.append("You gain the Surge buff")
 
 class MinorConcentratePotion(Item):
@@ -139,7 +139,7 @@ class MinorConcentratePotion(Item):
                  "value": 100,
                  "item_level": 1}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.Concentrate(5))
+    character.add_buff(effect.Concentrate(5, 1.5))
     logs.append("You gain the Concentrate buff")
 
 class ConcentratePotion(Item):
@@ -149,7 +149,7 @@ class ConcentratePotion(Item):
                  "value": 500,
                  "item_level": 10}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.Concentrate(10))
+    character.add_buff(effect.Concentrate(10, 2.0))
     logs.append("You gain the Concentrate buff")
 
 class MajorConcentratePotion(Item):
@@ -159,7 +159,7 @@ class MajorConcentratePotion(Item):
                  "value": 2500,
                  "item_level": 30}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.Concentrate(15))
+    character.add_buff(effect.Concentrate(15, 2.5))
     logs.append("You gain the Concentrate buff")
 
 class MinorSwiftnessPotion(Item):
@@ -169,7 +169,7 @@ class MinorSwiftnessPotion(Item):
                  "value": 100,
                  "item_level": 1}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.Swiftness(5))
+    character.add_buff(effect.Swiftness(5, 1.5))
     logs.append("You gain the Swiftness buff")
 
 class SwiftnessPotion(Item):
@@ -179,7 +179,7 @@ class SwiftnessPotion(Item):
                  "value": 500,
                  "item_level": 10}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.Swiftness(10))
+    character.add_buff(effect.Swiftness(10, 2.0))
     logs.append("You gain the Swiftness buff")
 
 class MajorSwiftnessPotion(Item):
@@ -189,7 +189,7 @@ class MajorSwiftnessPotion(Item):
                  "value": 2500,
                  "item_level": 30}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.Swiftness(15))
+    character.add_buff(effect.Swiftness(15, 2.5))
     logs.append("You gain the Swiftness buff")
 
 class MinorBulkUpPotion(Item):
@@ -199,25 +199,25 @@ class MinorBulkUpPotion(Item):
                  "value": 300,
                  "item_level": 1}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.BulkUp(5))
+    character.add_buff(effect.BulkUp(5, 1.4))
     logs.append("You gain the BulkUp buff")
 
 class BulkUpPotion(Item):
   def __init__(self):
     super(BulkUpPotion, self).__init__()
     self.info = {"name": "BulkUp Pot",
-                 "value": 900,
+                 "value": 1500,
                  "item_level": 10}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.BulkUp(10))
+    character.add_buff(effect.BulkUp(10, 1.7))
     logs.append("You gain the BulkUp buff")
 
 class MajorBulkUpPotion(Item):
   def __init__(self):
     super(MajorBulkUpPotion, self).__init__()
     self.info = {"name": "Major BulkUp Pot",
-                 "value": 2700,
+                 "value": 7500,
                  "item_level": 30}
   def apply(self, character, monster, logs):
-    character.add_buff(effect.BulkUp(15))
+    character.add_buff(effect.BulkUp(15, 2.0))
     logs.append("You gain the BulkUp buff")

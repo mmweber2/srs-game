@@ -134,7 +134,7 @@ class LastStand(Skill):
   def get_name(self):
     return "Last Stand"
   def duration(self):
-    return 2 + (self.level / 2)
+    return 3 + self.level
   def get_description(self):
     return "Cannot die for %d time units." % self.duration()
   def sp_cost(self):
@@ -149,9 +149,12 @@ class Surge(Skill):
   def get_name(self):
     return "Surge"
   def buff_duration(self):
-    return 5 + (5 * self.level)
+    return 5 + (2 * self.level)
+  def buff_power(self):
+    return 1.2 + 0.1 * self.level
   def get_description(self):
-    return "Strength up by 100%% for %d time" % self.buff_duration()
+    return "Strength up by %d%% for %d time" % ((self.buff_power() - 1) * 100,
+                                               self.buff_duration())
   def sp_cost(self):
     return int(self.level * 5 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
@@ -162,9 +165,12 @@ class Concentrate(Skill):
   def get_name(self):
     return "Concentrate"
   def buff_duration(self):
-    return 5 + (5 * self.level)
+    return 5 + (2 * self.level)
+  def buff_power(self):
+    return 1.2 + 0.1 * self.level
   def get_description(self):
-    return "Intelligence up by 100%% for %d time" % self.buff_duration()
+    return "Intellect up by %d%% for %d time" % ((self.buff_power() - 1) * 100,
+                                                self.buff_duration())
   def sp_cost(self):
     return int(self.level * 5 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
@@ -175,9 +181,12 @@ class Swiftness(Skill):
   def get_name(self):
     return "Swiftness"
   def buff_duration(self):
-    return 5 + (5 * self.level)
+    return 5 + (2 * self.level)
+  def buff_power(self):
+    return 1.2 + 0.1 * self.level
   def get_description(self):
-    return "Speed up by 100%% for %d time" % self.buff_duration()
+    return "Speed up by %d%% for %d time" % ((self.buff_power() - 1) * 100,
+                                            self.buff_duration())
   def sp_cost(self):
     return int(self.level * 7 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
@@ -188,13 +197,16 @@ class BulkUp(Skill):
   def get_name(self):
     return "Bulk Up"
   def buff_duration(self):
-    return 5 + (5 * self.level)
+    return 5 + (2 * self.level)
+  def buff_power(self):
+    return 1.2 + 0.1 * self.level
   def get_description(self):
-    return "Stamina up by 100%% for %d time" % self.buff_duration()
+    return "Stamina up by %d%% for %d time" % ((self.buff_power() - 1) * 100,
+                                            self.buff_duration())
   def sp_cost(self):
-    return int(self.level * 9 * (1.1 ** self.level))
+    return int(self.level * 7 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
-    actor.add_buff(effect.BulkUp(self.buff_duration()))
+    actor.add_buff(effect.BulkUp(self.buff_duration(), self.buff_power()))
     return Combat.TARGET_ALIVE
 
 class Cannibalize(Skill):
@@ -342,10 +354,13 @@ class FinalStrike(Skill):
   def get_name(self):
     return "Final Strike"
   def get_description(self):
-    return "Magical and physical attack. Uses all HP and SP"
+    return "Ultimate magical attack. Uses all HP and SP. Removes all buffs."
   def sp_cost(self):
     return int(self.level * 6 * (1.1 ** self.level))
+  def once_per_battle(self):
+    return True
   def apply_skill(self, actor, opponent, logs):
+    # TODO: Add base weapon damage in?
     base_damage = actor.current_hp - 1
     base_damage += (actor.current_sp * 3)
     base_damage *= 1.0 + (0.1 * self.level)
@@ -353,6 +368,7 @@ class FinalStrike(Skill):
                                   base_damage=base_damage)
     actor.current_sp = 0
     actor.current_hp = 1
+    actor.buffs = []
     return result
 
 class Renew(Skill):
@@ -361,7 +377,7 @@ class Renew(Skill):
   def base_hp_gain(self):
     return 50 * (self.level ** .5)
   def buff_duration(self):
-    return 9 + self.level
+    return 6 + (2 * self.level)
   def get_description(self):
     return "Gain %d HP/turn (base) for %d turns." % (self.base_hp_gain(),
                                                      self.buff_duration())

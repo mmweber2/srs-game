@@ -34,8 +34,6 @@ BLACK = "`0,0,0`"
 # -- Increased Stats
 # -- Lightning Strike (chance to automatically go again after an attack)
 # -- Dodge (chance to avoid all damage from an attack)
-# -- C-c-c-combobreaker (Chance to prevent opponent getting multiple turns)
-# -- Libra (See monster stats... with some percent chance? accuracy?)
 # TODO: General resist damage trait?
 
 class Character(object):

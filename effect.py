@@ -169,36 +169,100 @@ class LastStand(Buff):
     return "Last Stand"
 
 class Surge(Buff):
+  def __init__(self, duration, impact):
+    self.duration = duration
+    self.impact = impact
+    self.quantity = 0
+
+  def update(self, buff):
+    """Returns True if buff is the same kind, False otherwise."""
+    # Update the duration and effects of this buff, using the new buff.
+    assert not self.stackable()
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      self.impact = max(self.impact, buff.impact)
+      return True
+    else:
+      return False
+
   def get_impacts(self):
     impacts = {}
-    impacts["Strength"] = 2.0
+    impacts["Strength"] = self.impact
     return impacts
 
   def get_name(self):
     return "Surge"
 
 class Concentrate(Buff):
+  def __init__(self, duration, impact):
+    self.duration = duration
+    self.impact = impact
+    self.quantity = 0
+
+  def update(self, buff):
+    """Returns True if buff is the same kind, False otherwise."""
+    # Update the duration and effects of this buff, using the new buff.
+    assert not self.stackable()
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      self.impact = max(self.impact, buff.impact)
+      return True
+    else:
+      return False
+
   def get_impacts(self):
     impacts = {}
-    impacts["Intellect"] = 2.0
+    impacts["Intellect"] = self.impact
     return impacts
 
   def get_name(self):
     return "Concentrate"
 
 class Swiftness(Buff):
+  def __init__(self, duration, impact):
+    self.duration = duration
+    self.impact = impact
+    self.quantity = 0
+
+  def update(self, buff):
+    """Returns True if buff is the same kind, False otherwise."""
+    # Update the duration and effects of this buff, using the new buff.
+    assert not self.stackable()
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      self.impact = max(self.impact, buff.impact)
+      return True
+    else:
+      return False
+
   def get_impacts(self):
     impacts = {}
-    impacts["Speed"] = 2.0
+    impacts["Speed"] = self.impact
     return impacts
 
   def get_name(self):
     return "Swiftness"
 
 class BulkUp(Buff):
+  def __init__(self, duration, impact):
+    self.duration = duration
+    self.impact = impact
+    self.quantity = 0
+
+  def update(self, buff):
+    """Returns True if buff is the same kind, False otherwise."""
+    # Update the duration and effects of this buff, using the new buff.
+    assert not self.stackable()
+    if buff.get_name() == self.get_name():
+      self.duration = max(self.duration, buff.duration)
+      self.impact = max(self.impact, buff.impact)
+      return True
+    else:
+      return False
+
   def get_impacts(self):
     impacts = {}
-    impacts["Stamina"] = 2.0
+    impacts["Stamina"] = self.impact
     return impacts
 
   def get_name(self):

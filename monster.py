@@ -7,12 +7,10 @@ STAT_ORDER = ["Strength", "Intellect", "Speed", "Stamina", "Defense",
               "Magic Defense"]
 
 # TODO: Should Monster and Character subclass from something?
-NORMAL_CHANCES = [0.0, 0.2, 0.04, 0.008, 0.00016]
-BOSS_CHANCES = [0.0, 0.4, 0.16, 0.064, 0.0256]
-RUNE_CHANCE = 0.002
-BOSS_RUNE_CHANCE = 0.01
-#RUNE_CHANCE = 0.5
-#BOSS_RUNE_CHANCE = 0.5
+CHANCE_TIERS = {1: [0.0, 0.2, 0.04, 0.008, 0.00016],
+                2: [0.0, 0.4, 0.16, 0.064, 0.0256],
+                3: [0.0, 0.5, 0.25, 0.125, 0.0625]}
+RUNE_CHANCES = {1: 0.002, 2: 0.01, 3: 0.02}
 
 class Monster(object):
   def __init__(self, level, boss):
@@ -113,7 +111,7 @@ class Monster(object):
     effective_level /= 6
     return int(10 * effective_level)
 
-  def get_treasure(self):
+  def get_treasure(self, infinity=False):
     # list of treasure from this monster.
     # May be int (for gold), Equipment objects
     # TODO: Item objects, runes, ...?
@@ -122,12 +120,14 @@ class Monster(object):
     min_gold = 5 * self.level * boss_factor
     max_gold = 15 * self.level * boss_factor
     treasure.append(random.randint(min_gold, max_gold))
-    assert len(NORMAL_CHANCES) == len(BOSS_CHANCES)
-    chances = BOSS_CHANCES if self.boss else NORMAL_CHANCES
+    treasure_tier = 1
+    treasure_tier += (1 if self.boss else 0)
+    treasure_tier += (1 if infinity else 0)
+    chances = CHANCE_TIERS[treasure_tier]
     for rarity in range(1, len(chances)):
       while random.random() < chances[rarity]:
         treasure.append(Equipment.get_new_armor(self.level, rarity=rarity))
-    rune_chance = BOSS_RUNE_CHANCE if self.boss else RUNE_CHANCE
+    rune_chance = RUNE_CHANCES[treasure_tier]
     while random.random() < rune_chance:
       treasure.append("Rune")
     return treasure

@@ -43,7 +43,7 @@ DEBUG_TOWER_START = None
 #DEBUG_BUILDING = rooms.Crafthall
 #DEBUG_FLOOR = 1
 #DEBUG_GOLD = 100000
-#DEBUG_CHARACTER = 50
+#DEBUG_CHARACTER = 75
 #DEBUG_TOWER_START = 49
 
 # TODO: http://www.pyinstaller.org/ to get packages
@@ -53,22 +53,24 @@ DEBUG_TOWER_START = None
 # TODO: add traits to weapons/armor
 # TODO: Add an "acknowledgement" state, to make certain uncommon states harder
 #       to skip past (levelling up, finding a shop in a tower, etc)
-# TODO: Add some more extensive logging that gets written to disk in case
-#       something fails. Maybe we can do a replay of sorts
 # TODO: Add a few options boxes. One in particular to "value" stats, so you can
 #       quickly get a value for whether a piece of equipment is better or not
 #       Maybe one for name, too, eh?
+# START HERE: Clear out some of these TODOs. Also, add traits to armor.
+# -- Have weapon and armor shops in Dungeon/Tower/Infinity have rare/epic  items
 
 # Game Balance notes:
-# -- Swiftness might be OP, not sure yet.
-# To Test:
-# -- Drain, Bulk Up, Final Strike
-# -- Any real physical build
-# -- A speed build (Swiftness/Drain/?)
 # -- Re-evaluate resting in the Infinity Dungeon
 # -- Make it so dying in a quest and dungeon takes less time than in the Tower
 #    That allows the player to use the quest as a guide to whether they should
 #    attempt the tower, somewhat.
+# -- Is there any way to have a build that doesn't require a heal? This is a
+#    real weakness to physical builds right now.
+# To Test:
+# -- Any real physical build
+# -- A speed build (Swiftness/Drain/?)
+# -- Last Stand: 3 turns base. Is it once per battle?
+# -- There is some bug in apply_death from STRONGHOLD
 
 class GameState(object):
   """
@@ -202,7 +204,7 @@ class GameState(object):
       else:
         return ["Continue Quest", "Rest", "Item", "Leave Quest"]
     elif current_state == "COMBAT":
-      if self.monster.boss:
+      if self.monster.boss or self.infinity_dungeon or self.rune_level != -1:
         return ["Attack", "Skill", "Item", ""]
       else:
         return ["Attack", "Skill", "Item", "Escape"]
@@ -352,7 +354,6 @@ class GameState(object):
       self.monster = self.quest.get_monster()
       # TODO: Merge this with start_combat somehow
       logs.append("You have encountered a monster")
-      #return ["Continue Quest", "Rest", "Item", "Leave Quest"]
     elif choice_text == "Rest":
       self.pass_time(5, logs)
       logs.append("You rest")
@@ -474,6 +475,8 @@ class GameState(object):
         treasure.append(random.randint(min_gold, max_gold))
       else:
         rarity = min(random.randint(1, 4) for _ in range(3))
+        if self.infinity_dungeon:
+          rarity = max(rarity, min(random.randint(1, 4) for _ in range(3)))
         level = max(1, int(self.floor + random.gauss(0, 1)))
         treasure.append(Equipment.get_new_armor(level, rarity))
     self.treasure_queue = treasure
@@ -495,7 +498,7 @@ class GameState(object):
       logs.append("You rest")
       hp_gained = self.character.rest()
       logs.append("You regain %d HP" % hp_gained)
-      if random.random() < .2:
+      if random.random() < .2 or self.infinity_dungeon:
         self.start_combat(logs, .1)
     elif choice_text == "Item":
       self.pass_time(0, logs)
@@ -537,7 +540,9 @@ class GameState(object):
     else:
       self.character.apply_death(logs)
     self.change_state("TOWN")
-    self.pass_time(random.randint(0, 3 * self.floor), logs)
+    time_lost = random.randint(1, 3 * self.floor)
+    self.pass_time(time_lost, logs)
+    logs.append("You lost %d minutes" % time_lost)
 
   def dungeon_victory_update(self, base_floor):
     if self.infinity_dungeon:
@@ -557,7 +562,7 @@ class GameState(object):
       logs.append("You have defeated %s" % self.monster.name)
       levelups = self.character.gain_exp(self.monster.calculate_exp(),
                                          self.monster.level, logs)
-      self.treasure_queue = self.monster.get_treasure()
+      self.treasure_queue = self.monster.get_treasure(self.infinity_dungeon)
       self.monster = None
       self.leave_state()
       if self.current_state() == "QUEST":
