@@ -69,8 +69,11 @@ DEBUG_TOWER_START = None
 # To Test:
 # -- Any real physical build
 # -- A speed build (Swiftness/Drain/?)
-# -- Last Stand: 3 turns base. Is it once per battle?
 # -- There is some bug in apply_death from STRONGHOLD
+# -- Put buffs in left panel during combat
+# -- Change "minutes" to "time units" or whatever
+# -- Max buff percentage? (like say 50%)
+# -- Buff HP/SP pots (less cost at least)
 
 class GameState(object):
   """

@@ -158,7 +158,7 @@ class Surge(Skill):
   def sp_cost(self):
     return int(self.level * 5 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
-    actor.add_buff(effect.Surge(self.buff_duration()))
+    actor.add_buff(effect.Surge(self.buff_duration(), self.buff_power()))
     return Combat.TARGET_ALIVE
 
 class Concentrate(Skill):
@@ -174,7 +174,7 @@ class Concentrate(Skill):
   def sp_cost(self):
     return int(self.level * 5 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
-    actor.add_buff(effect.Concentrate(self.buff_duration()))
+    actor.add_buff(effect.Concentrate(self.buff_duration(), self.buff_power()))
     return Combat.TARGET_ALIVE
 
 class Swiftness(Skill):
@@ -190,7 +190,7 @@ class Swiftness(Skill):
   def sp_cost(self):
     return int(self.level * 7 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
-    actor.add_buff(effect.Swiftness(self.buff_duration()))
+    actor.add_buff(effect.Swiftness(self.buff_duration(), self.buff_power()))
     return Combat.TARGET_ALIVE
 
 class BulkUp(Skill):
