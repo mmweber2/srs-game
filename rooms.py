@@ -320,20 +320,95 @@ class Forge(Room):
     self.forging_armor = False
     self.faction_rate = faction_rate
 
-class ArmorShop(Room):
-  def __init__(self, level):
-    super(ArmorShop, self).__init__(level)
+class EquipmentShop(Room):
+  def __init__(self, level, shop_type):
     self.level = level
-    # One for each slot, 1-3
-    self.inventory = [Equipment.get_new_armor(level, slot)
-                      for slot in range(1, 4)]
+    self.inventory = None
     self.buying = False
     self.shop_choice = None
+    self.shop_type = shop_type
+
+  def get_buttons(self, character):
+    if self.buying:
+      return ["", "Keep Current", "Buy", ""]
+    else:
+      choices = []
+      for i in range(len(self.inventory)):
+        if self.inventory[i]:
+          choices.append("%s #%d" % (self.shop_type, i + 1))
+        else:
+          choices.append("")
+      choices.append("Leave Shop")
+      return choices
+
+  def get_cost(self, item):
+    return int(item.get_value() * self.faction_rate)
+
+  def get_text(self, character):
+    if self.buying:
+      equip = self.inventory[self.shop_choice]
+      slot = equip.slot
+      return Equipment.equipment_comparison_text(character.equipment[slot],
+                                                 equip)
+    else:
+      pieces = []
+      for i, item in enumerate(self.inventory):
+        if item is not None:
+          pieces.append("%s #%d  (%d gold)" % (self.shop_type, i + 1, 
+                                               self.get_cost(item)))
+          pieces.append(str(item))
+      if not pieces:
+        pieces.append("You cleaned 'em out!")
+      return "\n".join(pieces)
+
+  def apply_choice_buy_equipment(self, choice_text, logs, character):
+    if choice_text == "Keep Current":
+      self.buying = False
+      return (0, Room.NO_CHANGE)
+    elif choice_text == "Buy":
+      equipment = self.inventory[self.shop_choice]
+      value = self.get_cost(equipment)
+      if character.gold >= value:
+        character.gold -= value
+        recycle = character.equip(equipment)
+        self.inventory[self.shop_choice] = None
+        self.shop_choice = None
+        self.buying = False
+        logs.append("Purchased %s for %d gold." % (str(equipment), value))
+        logs.append("Recycled %s" % recycle)
+        materials = recycle.get_recycled_materials()
+        character.gain_materials(materials)
+        logs.append("Received %s" % Equipment.materials_string(materials))
+        return (1, Room.NO_CHANGE)
+      else:
+        logs.append("You do not have enough money.")
+        self.buying = False
+        self.shop_choice = None
+        return (0, Room.NO_CHANGE)
+
+  def apply_choice(self, choice_text, logs, character):
+    if self.buying:
+      return self.apply_choice_buy_equipment(choice_text, logs, character)
+    elif choice_text.startswith("%s #" % self.shop_type):
+      choice = int(choice_text[-1])
+      self.shop_choice = choice - 1
+      self.buying = True
+      logs.append("You consider %s..." % choice_text)
+      return (0, Room.NO_CHANGE)
+    elif choice_text == "Leave Shop":
+      return (0, Room.LEAVE_ROOM)
+
+  def enter_shop(self, faction_rate):
+    self.buying = False
+    self.shop_choice = None
+    self.faction_rate = faction_rate
+
+class ArmorShop(EquipmentShop):
+  def __init__(self, level):
+    super(ArmorShop, self).__init__(level, "Armor")
+    self.refresh()
 
   def refresh(self):
-    # TODO: Might make the armor get stronger periodically. The idea being
-    #       this pushes towards eventually being able to just overpower the
-    #       tower.
     self.inventory = [Equipment.get_new_armor(self.level, slot)
                       for slot in range(1, 4)]
 
@@ -341,174 +416,47 @@ class ArmorShop(Room):
   def get_name(cls):
     return "Armorer"
 
-  def get_buttons(self, character):
-    if self.buying:
-      return ["", "Keep Current", "Buy", ""]
-    else:
-      choices = []
-      for i in range(len(self.inventory)):
-        if self.inventory[i]:
-          choices.append("Armor #%d" % (i + 1))
-        else:
-          choices.append("")
-      choices.append("Leave Shop")
-      return choices
-
-  def get_cost(self, item):
-    return int(item.get_value() * self.faction_rate)
-
-  def get_text(self, character):
-    if self.buying:
-      equip = self.inventory[self.shop_choice]
-      slot = equip.slot
-      return Equipment.equipment_comparison_text(character.equipment[slot],
-                                                 equip)
-    else:
-      pieces = []
-      for i, item in enumerate(self.inventory):
-        if item is not None:
-          pieces.append("Armor #%d  (%d gold)" % (i + 1, self.get_cost(item)))
-          pieces.append(str(item))
-      if not pieces:
-        pieces.append("You cleaned 'em out!")
-      return "\n".join(pieces)
-
-  def apply_choice_buy_equipment(self, choice_text, logs, character):
-    if choice_text == "Keep Current":
-      self.buying = False
-      return (0, Room.NO_CHANGE)
-    elif choice_text == "Buy":
-      equipment = self.inventory[self.shop_choice]
-      value = self.get_cost(equipment)
-      if character.gold >= value:
-        character.gold -= value
-        recycle = character.equip(equipment)
-        self.inventory[self.shop_choice] = None
-        self.shop_choice = None
-        self.buying = False
-        logs.append("Purchased %s for %d gold." % (str(equipment), value))
-        logs.append("Recycled %s" % recycle)
-        materials = recycle.get_recycled_materials()
-        character.gain_materials(materials)
-        logs.append("Received %s" % Equipment.materials_string(materials))
-        return (1, Room.NO_CHANGE)
-      else:
-        logs.append("You do not have enough money.")
-        self.buying = False
-        self.shop_choice = None
-        return (0, Room.NO_CHANGE)
-
-  def apply_choice(self, choice_text, logs, character):
-    if self.buying:
-      return self.apply_choice_buy_equipment(choice_text, logs, character)
-    elif choice_text.startswith("Armor #"):
-      choice = int(choice_text[-1])
-      self.shop_choice = choice - 1
-      self.buying = True
-      logs.append("You consider %s..." % choice_text)
-      return (0, Room.NO_CHANGE)
-    elif choice_text == "Leave Shop":
-      return (0, Room.LEAVE_ROOM)
-
-  def enter_shop(self, faction_rate):
-    self.buying = False
-    self.shop_choice = None
-    self.faction_rate = faction_rate
-
-# TODO: There is a lot of duplication between this and ArmorShop. Clean it up.
-#       Like really, whole functions
-class WeaponShop(Room):
+class WeaponShop(EquipmentShop):
   def __init__(self, level):
-    super(WeaponShop, self).__init__(level)
-    self.level = level
-    # One for each slot, 1-3
-    self.inventory = [Equipment.get_new_armor(level, 0) for _ in range(3)]
-    self.buying = False
-    self.shop_choice = None
+    super(WeaponShop, self).__init__(level, "Weapon")
+    self.refresh()
 
   def refresh(self):
-    # TODO: Might make the armor get stronger periodically. The idea being
-    #       this pushes towards eventually being able to just overpower the
-    #       tower.
     self.inventory = [Equipment.get_new_armor(self.level, 0) for _ in range(3)]
 
   @classmethod
   def get_name(cls):
     return "Weaponsmith"
 
-  def get_buttons(self, character):
-    if self.buying:
-      return ["", "Keep Current", "Buy", ""]
-    else:
-      choices = []
-      for i in range(len(self.inventory)):
-        if self.inventory[i]:
-          choices.append("Weapon #%d" % (i + 1))
-        else:
-          choices.append("")
-      choices.append("Leave Shop")
-      return choices
+class Jeweler(EquipmentShop):
+  def __init__(self, level):
+    super(Jeweler, self).__init__(level, "Accessory")
+    self.refresh()
 
-  def get_cost(self, item):
-    return int(item.get_value() * self.faction_rate)
+  def refresh(self):
+    self.inventory = [Equipment.get_new_armor(self.level, 4) for _ in range(3)]
 
-  def get_text(self, character):
-    if self.buying:
-      equip = self.inventory[self.shop_choice]
-      slot = equip.slot
-      return Equipment.equipment_comparison_text(character.equipment[slot],
-                                                 equip)
-    else:
-      pieces = []
-      for i, item in enumerate(self.inventory):
-        if item is not None:
-          pieces.append("Weapon #%d  (%d gold)" % (i + 1, self.get_cost(item)))
-          pieces.append(str(item))
-      if not pieces:
-        pieces.append("You cleaned 'em out!")
-      return "\n".join(pieces)
+  @classmethod
+  def get_name(cls):
+    return "Jeweler"
 
-  def apply_choice_buy_equipment(self, choice_text, logs, character):
-    if choice_text == "Keep Current":
-      self.buying = False
-      return (0, Room.NO_CHANGE)
-    elif choice_text == "Buy":
-      equipment = self.inventory[self.shop_choice]
-      value = self.get_cost(equipment)
-      if character.gold >= value:
-        character.gold -= value
-        recycle = character.equip(equipment)
-        self.inventory[self.shop_choice] = None
-        self.shop_choice = None
-        self.buying = False
-        logs.append("Purchased %s for %d gold." % (str(equipment), value))
-        logs.append("Recycled %s" % recycle)
-        materials = recycle.get_recycled_materials()
-        character.gain_materials(materials)
-        logs.append("Received %s" % Equipment.materials_string(materials))
-        return (1, Room.NO_CHANGE)
-      else:
-        logs.append("You do not have enough money.")
-        self.buying = False
-        self.shop_choice = None
-        return (0, Room.NO_CHANGE)
+class RareGoodsShop(EquipmentShop):
+  def __init__(self, level):
+    super(RareGoodsShop, self).__init__(level, "Equipment")
+    self.refresh()
 
-  def apply_choice(self, choice_text, logs, character):
-    if self.buying:
-      return self.apply_choice_buy_equipment(choice_text, logs, character)
-    elif choice_text.startswith("Weapon #"):
-      choice = int(choice_text[-1])
-      self.shop_choice = choice - 1
-      self.buying = True
-      logs.append("You consider %s..." % choice_text)
-      return (0, Room.NO_CHANGE)
-    elif choice_text == "Leave Shop":
-      return (0, Room.LEAVE_ROOM)
+  def refresh(self):
+    self.inventory = []
+    for _ in range(3):
+      level = max(1, self.level + int(random.gauss(0, 3)))
+      rarity = random.randint(2, 4)
+      slot = random.randint(0, 4)
+      equip = Equipment.get_new_armor(level, slot=slot, rarity=rarity)
+      self.inventory.append(equip)
 
-  def enter_shop(self, faction_rate):
-    self.buying = False
-    self.shop_choice = None
-    self.faction_rate = faction_rate
+  @classmethod
+  def get_name(cls):
+    return "Rare Goods Shop"
 
 class Inn(Room):
   @classmethod
@@ -669,7 +617,6 @@ class Alchemist(Room):
     return "\n".join(pieces)
 
   def apply_choice(self, choice_text, logs, character):
-    # TODO: Fix this (Choice #0, etc)
     if choice_text.startswith("Choice #"):
       choice = int(choice_text[-1]) - 1
       item = self.inventory[choice]

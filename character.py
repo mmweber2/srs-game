@@ -34,7 +34,6 @@ BLACK = "`0,0,0`"
 # -- Increased Stats
 # -- Lightning Strike (chance to automatically go again after an attack)
 # -- Dodge (chance to avoid all damage from an attack)
-# TODO: General resist damage trait?
 
 class Character(object):
   def __init__(self):
@@ -45,7 +44,7 @@ class Character(object):
     self.stats = {"Strength": 20, "Stamina": 20, "Defense": 20, "Speed": 20,
                   "Intellect": 20, "Magic Defense": 20}
     self.gold = 100
-    self.name = "Hero?"
+    self.name = "Hero"
     self.base_hp = 20
     self.base_sp = 20
     self.max_hp = 5 * self.stats["Stamina"] + self.base_hp

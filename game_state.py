@@ -11,11 +11,13 @@ import skills
 
 TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                   rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
-                  rooms.Inn, rooms.WeaponShop, rooms.Dungeon, rooms.Crafthall]
+                  rooms.Inn, rooms.WeaponShop, rooms.Dungeon, rooms.Crafthall,
+                  rooms.Jeweler]
 
 TOWER_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                    rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
-                   rooms.Inn, rooms.WeaponShop, rooms.Crafthall]
+                   rooms.Inn, rooms.WeaponShop, rooms.Crafthall,
+                   rooms.Jeweler, rooms.RareGoodsShop]
 
 CHOICES = {"CHAR_CREATE": ["Strength", "Stamina", "Speed", "Intellect"],
            "RUNE_WORLD": ["Explore", "", "Item", "Leave Rune"],
@@ -40,14 +42,13 @@ DEBUG_GOLD = None
 DEBUG_CHARACTER = None
 DEBUG_TOWER_START = None
 
-#DEBUG_BUILDING = rooms.Crafthall
+#DEBUG_BUILDING = rooms.RareGoodsShop
 #DEBUG_FLOOR = 1
 #DEBUG_GOLD = 100000
 #DEBUG_CHARACTER = 75
 #DEBUG_TOWER_START = 49
 
 # TODO: http://www.pyinstaller.org/ to get packages
-# TODO: Add menu choice to restart game
 # TODO: It is probably not best to be passing logs around to everything?
 #       it could be part of the GameState, or we could use a logger for real
 # TODO: add traits to weapons/armor
@@ -60,20 +61,14 @@ DEBUG_TOWER_START = None
 # -- Have weapon and armor shops in Dungeon/Tower/Infinity have rare/epic  items
 
 # Game Balance notes:
-# -- Re-evaluate resting in the Infinity Dungeon
 # -- Make it so dying in a quest and dungeon takes less time than in the Tower
 #    That allows the player to use the quest as a guide to whether they should
 #    attempt the tower, somewhat.
 # -- Is there any way to have a build that doesn't require a heal? This is a
 #    real weakness to physical builds right now.
 # To Test:
-# -- Any real physical build
-# -- A speed build (Swiftness/Drain/?)
 # -- There is some bug in apply_death from STRONGHOLD
-# -- Put buffs in left panel during combat
-# -- Change "minutes" to "time units" or whatever
 # -- Max buff percentage? (like say 50%)
-# -- Buff HP/SP pots (less cost at least)
 
 class GameState(object):
   """
@@ -545,7 +540,7 @@ class GameState(object):
     self.change_state("TOWN")
     time_lost = random.randint(1, 3 * self.floor)
     self.pass_time(time_lost, logs)
-    logs.append("You lost %d minutes" % time_lost)
+    logs.append("You lost %d time units" % time_lost)
 
   def dungeon_victory_update(self, base_floor):
     if self.infinity_dungeon:
@@ -801,6 +796,13 @@ class GameState(object):
                                             skill.get_description()))
     return "\n".join(pieces)
 
+  def combat_text(self):
+    buffs = ", ".join(str(buff) for buff in self.character.buffs)
+    buffs = buffs or "None"
+    libra_string = self.monster.libra_string(self.character.traits["Libra"])
+    return "Your HP: %s\nBuffs: %s\n\n%s" % (self.character.colored_hp(),
+                                             buffs, libra_string)
+
   def panel_text(self):
     """Return text to display to the player about the current game state."""
     # TODO: Add explanations for menu choices, as well.
@@ -816,8 +818,7 @@ class GameState(object):
     elif current_state == "TOWER":
       return "Inside the tower ascending to level %d" % (self.floor + 1)
     elif current_state == "COMBAT":
-      libra_string = self.monster.libra_string(self.character.traits["Libra"])
-      return "Your HP: %s\n\n%s" % (self.character.colored_hp(), libra_string)
+      return self.combat_text()
     elif current_state == "LOOT_EQUIPMENT":
       return self.loot_choice_text()
     elif current_state == "ACCEPT_QUEST" or current_state == "QUEST":

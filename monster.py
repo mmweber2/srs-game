@@ -2,6 +2,7 @@ import collections
 import random
 from equipment import Equipment
 from effect import Debuff, Effect
+from name_generator import NameGenerator
 
 STAT_ORDER = ["Strength", "Intellect", "Speed", "Stamina", "Defense",
               "Magic Defense"]
@@ -11,6 +12,8 @@ CHANCE_TIERS = {1: [0.0, 0.2, 0.04, 0.008, 0.00016],
                 2: [0.0, 0.4, 0.16, 0.064, 0.0256],
                 3: [0.0, 0.5, 0.25, 0.125, 0.0625]}
 RUNE_CHANCES = {1: 0.002, 2: 0.01, 3: 0.02}
+
+NAME_GENERATOR = NameGenerator("monsters.txt")
 
 class Monster(object):
   def __init__(self, level, boss):
@@ -35,13 +38,10 @@ class Monster(object):
       self.stats[stat] = max(1, self.stats[stat])
     self.max_hp = self.stats["Stamina"] * 5
     self.current_hp = self.max_hp
-    # TODO: Name generation
     if boss:
-      self.name = "Boss Monster, Level %d" % level
+      self.name = "%s (Level %d*)" % (NAME_GENERATOR.generate_name(), level)
     else:
-      self.name = "Generic Monster, Level %d" % level
-    # TODO: Should monsters get traits? If so, we might want to break them
-    #       out from "character"
+      self.name = "%s (Level %d)" % (NAME_GENERATOR.generate_name(), level)
     self.traits = collections.defaultdict(int)
     self.buffs = []
     self.debuffs = []

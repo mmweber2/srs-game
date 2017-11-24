@@ -4,7 +4,6 @@ import effect
 
 # TODO: A few more interesting magical attacks
 # Force bolt?
-# Libra as a buff?
 
 class Skill(object):
   def __init__(self, level=1):
@@ -360,7 +359,6 @@ class FinalStrike(Skill):
   def once_per_battle(self):
     return True
   def apply_skill(self, actor, opponent, logs):
-    # TODO: Add base weapon damage in?
     base_damage = actor.current_hp - 1
     base_damage += (actor.current_sp * 3)
     base_damage *= 1.0 + (0.1 * self.level)

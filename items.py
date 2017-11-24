@@ -24,37 +24,37 @@ class MinorHealthPotion(Item):
                  "value": 100,
                  "item_level": 1}
   def apply(self, character, monster, logs):
-    hp_gained = character.restore_hp(100)
+    hp_gained = character.restore_hp(200)
     logs.append("You restored %d HP" % hp_gained)
 
 class HealthPotion(Item):
   def __init__(self):
     super(HealthPotion, self).__init__()
     self.info = {"name": "HP Pot",
-                 "value": 1000,
+                 "value": 500,
                  "item_level": 10}
   def apply(self, character, monster, logs):
-    hp_gained = character.restore_hp(400)
+    hp_gained = character.restore_hp(600)
     logs.append("You restored %d HP" % hp_gained)
 
 class MajorHealthPotion(Item):
   def __init__(self):
     super(MajorHealthPotion, self).__init__()
     self.info = {"name": "Major HP Pot",
-                 "value": 10000,
+                 "value": 2500,
                  "item_level": 30}
   def apply(self, character, monster, logs):
-    hp_gained = character.restore_hp(1600)
+    hp_gained = character.restore_hp(1800)
     logs.append("You restored %d HP" % hp_gained)
 
 class SuperHealthPotion(Item):
   def __init__(self):
     super(SuperHealthPotion, self).__init__()
     self.info = {"name": "Super HP Pot",
-                 "value": 100000,
+                 "value": 15000,
                  "item_level": 30}
   def apply(self, character, monster, logs):
-    hp_gained = character.restore_hp(6400)
+    hp_gained = character.restore_hp(5400)
     logs.append("You restored %d HP" % hp_gained)
 
 class MinorMagicPotion(Item):
@@ -71,7 +71,7 @@ class MagicPotion(Item):
   def __init__(self):
     super(MagicPotion, self).__init__()
     self.info = {"name": "SP Pot",
-                 "value": 2000,
+                 "value": 1200,
                  "item_level": 10}
   def apply(self, character, monster, logs):
     sp_gained = character.restore_sp(200)
@@ -81,7 +81,7 @@ class MajorMagicPotion(Item):
   def __init__(self):
     super(MajorMagicPotion, self).__init__()
     self.info = {"name": "Major SP Pot",
-                 "value": 20000,
+                 "value": 7500,
                  "item_level": 30}
   def apply(self, character, monster, logs):
     sp_gained = character.restore_sp(600)

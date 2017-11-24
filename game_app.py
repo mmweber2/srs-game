@@ -117,8 +117,11 @@ class MainWindow(wx.Frame):
     menu_bar = wx.MenuBar()
     file_menu = wx.Menu()
     menu_exit = file_menu.Append(wx.NewId(), "E&xit", "Game over!")
+    restart = file_menu.Append(wx.NewId(), "&Restart\tCtrl+R",
+                               "Restart the game")
     menu_bar.Append(file_menu, "&File")
     self.Bind(wx.EVT_MENU, self.on_exit, menu_exit)
+    self.Bind(wx.EVT_MENU, self.on_restart, restart)
     self.SetMenuBar(menu_bar)
 
     self.top_sizer = wx.BoxSizer(wx.HORIZONTAL)   # Top level
@@ -163,30 +166,35 @@ class MainWindow(wx.Frame):
       self.Bind(wx.EVT_BUTTON,
                 lambda evt, temp=binding[2]:
                 self.button_press(evt, temp), id=event_id)
+    # Accelerators for menu items
+    entries.append((wx.ACCEL_CTRL, ord("R"), restart.GetId()))
+
     accel_table = wx.AcceleratorTable(entries)
     self.SetAcceleratorTable(accel_table)
 
     # Update UI with initial game state
-    self.game_state = GameState()
-    self.set_labels(self.game_state.get_choices())
-    self.status_bar.SetStatusText(self.game_state.current_state(), 0)
-    self.encounter_panel.update(self.game_state)
+    self.initialize()
 
     self.Show()
 
-  def button_press(self, evt, number):  # pylint: disable=unused-argument
-    if not self.button_panel.buttons[number].IsEnabled():
-      return   # TODO: Do I need a Skip()?
-    logs = self.game_state.apply_choice(number)
-    for log in logs:
-      self.log_panel.add_entry(log)
+  def initialize(self):
+    self.game_state = GameState()
+    self.update_ui(character=False)
+
+  def update_ui(self, character=True):
+    if character:
+      self.char_panel.update_character(self.game_state)
+    else:
+      self.char_panel.text_field.Clear()
+    self.set_labels(self.game_state.get_choices())
+    self.status_bar.SetStatusText(self.game_state.current_state(), 0)
+    self.encounter_panel.update(self.game_state)
+    self.update_status_bars()
+
+  def update_status_bars(self):
     #self.status_bar.SetStatusText(self.game_state.current_state(), 0)
     # TODO: Revert to above
     self.status_bar.SetStatusText(str(self.game_state.state), 0)
-    # TODO: unify names here. Also break out to general "Update" function?
-    self.char_panel.update_character(self.game_state)
-    self.set_labels(self.game_state.get_choices())
-    self.encounter_panel.update(self.game_state)
     self.status_bar.SetStatusText("Energy: %d" % self.game_state.energy, 1)
     self.status_bar.SetStatusText("GP: %d" % self.game_state.character.gold, 2)
     time_spent = self.game_state.time_spent
@@ -196,9 +204,21 @@ class MainWindow(wx.Frame):
                                                        update_ready,
                                                        time_left), 3)
 
+  def button_press(self, evt, number):  # pylint: disable=unused-argument
+    if not self.button_panel.buttons[number].IsEnabled():
+      return
+    logs = self.game_state.apply_choice(number)
+    for log in logs:
+      self.log_panel.add_entry(log)
+    # TODO: unify names here. Also break out to general "Update" function?
+    self.update_ui()
+
   def on_exit(self, evt):  # pylint: disable=unused-argument
     self.log_panel.filehandle.close()
     self.Close(True)
+
+  def on_restart(self, evt):  # pylint: disable=unused-argument
+    self.initialize()
 
   def set_labels(self, labels):
     self.button_panel.set_labels(labels)
