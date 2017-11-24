@@ -15,22 +15,26 @@ RUNE_CHANCES = {1: 0.002, 2: 0.01, 3: 0.02}
 
 NAME_GENERATOR = NameGenerator("monsters.txt")
 
+STAT_DICE = {"Strength": (12, 1),
+             "Defense": (12, 1),
+             "Magic Defense": (12, 1),
+             "Intellect": (12, 1),
+             "Speed": (12, 1),
+             "Stamina": (10, 1)}
+
 class Monster(object):
   def __init__(self, level, boss):
-    # TODO: Should level vary somewhat?
     self.stats = {}
-    self.level = level
+    self.level = max(1, int(level * random.gauss(1.0, 0.1)))
     self.boss = boss
     # If you modify these, make sure to modify the XP calc
-    # TODO: Make a common table both rely on, idiot
-    for stat in ("Strength", "Defense", "Speed", "Intellect", "Magic Defense"):
-      self.stats[stat] = self.roll_stat(level, 12, 1)
-    for stat in ("Stamina",):
-      self.stats[stat] = self.roll_stat(level, 10, 1)
+    for stat in STAT_DICE:
+      die, modifier = STAT_DICE[stat]
+      self.stats[stat] = self.roll_stat(level, die, modifier)
     if boss:
       for stat in self.stats:
         self.stats[stat] = self.stats[stat] * 1.3
-      self.stats["Stamina"] *= 4   # Effectively x6.00
+      self.stats["Stamina"] *= 4   # Effectively x5.2
     for stat in self.stats:
       # 75-125% change
       self.stats[stat] *= (random.random() * 0.5) + 0.75
@@ -39,7 +43,8 @@ class Monster(object):
     self.max_hp = self.stats["Stamina"] * 5
     self.current_hp = self.max_hp
     if boss:
-      self.name = "%s (Level %d*)" % (NAME_GENERATOR.generate_name(), level)
+      self.name = "%s (Level %d Elite)" % (NAME_GENERATOR.generate_name(),
+                                           level)
     else:
       self.name = "%s (Level %d)" % (NAME_GENERATOR.generate_name(), level)
     self.traits = collections.defaultdict(int)
@@ -64,7 +69,6 @@ class Monster(object):
   def libra_string(self, libra_level):
     pieces = []
     pieces.append("Name: %s\n" % self.name)
-    # TODO: Add level and boss indicator
     if libra_level == 0:
       pieces.append("HP: %s\n" % self.hp_string())
     else:
@@ -104,17 +108,16 @@ class Monster(object):
 
   def calculate_exp(self):
     effective_level = 0
-    for stat in ("Strength", "Defense", "Speed", "Intellect", "Magic Defense"):
-      effective_level += (self.stats[stat] / 7.5)
-    for stat in ("Stamina",):
-      effective_level += (self.stats[stat] / 6.5)
+    for stat in STAT_DICE:
+      die, modifier = STAT_DICE[stat]
+      average = ((1 + die) / 2.0) + modifier
+      effective_level += (self.stats[stat] / average)
     effective_level /= 6
     return int(10 * effective_level)
 
   def get_treasure(self, infinity=False):
     # list of treasure from this monster.
-    # May be int (for gold), Equipment objects
-    # TODO: Item objects, runes, ...?
+    # May be int (for gold), Equipment objects, or the string "Rune"
     treasure = []
     boss_factor = 4 if self.boss else 1
     min_gold = 5 * self.level * boss_factor
@@ -154,7 +157,6 @@ class Monster(object):
 
   @classmethod
   def roll_stat(cls, level, die, modifier):
-    # TODO: May be too slow, might want to use a different method
     return sum(random.randint(1, die) + modifier for _ in xrange(level))
 
   def get_action(self, character):

@@ -21,7 +21,6 @@ class Combat(object):
     # Character action
     result = cls.perform_action(action, info, character, monster, logs)
     if result == cls.TARGET_DEAD:
-      # TODO: If monsters get traits, add perserverance here
       return cls.MONSTER_DEAD
     elif result == cls.ACTOR_ESCAPED:
       return cls.CHARACTER_ESCAPED
@@ -156,7 +155,6 @@ class Combat(object):
     actor_stat = actor.get_effective_stat(stat)
     target_stat = target.get_effective_stat(stat)
     total_stat = actor_stat + target_stat
-    # TODO: Consider applying a dampening factor to this (like sqrt again?)
     actor_chance = float(actor_stat) / total_stat
     if random.random() < actor_chance:
       return cls.ACTOR_SUCCEEDED

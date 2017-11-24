@@ -192,7 +192,6 @@ class Character(object):
     if sum(self.materials) == 0:
       pieces.append("None\n")
     else:
-      # TODO: Use function in Equipment?
       for i in xrange(len(self.materials)):
         if self.materials[i] > 0:
           pieces.append("%s: %d  " % (RARITY[i], self.materials[i]))
@@ -268,7 +267,6 @@ class Character(object):
     return self.equipment[0].get_damage_type()
 
   def next_level_exp(self):
-    # TODO: Something more "complex", lol
     return int(self.level * 100 * (1.01 ** self.level))
 
   def recalculate_maxes(self):

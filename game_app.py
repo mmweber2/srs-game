@@ -57,7 +57,7 @@ class CharacterPanel(wx.Panel):
     bsizer.Add(self.text_field, 1, wx.EXPAND)
     self.SetSizerAndFit(bsizer)
 
-  def update_character(self, game_state):
+  def update(self, game_state):
     self.text_field.SetValue("")
     write_color_text(self.text_field, str(game_state.character))
 
@@ -183,7 +183,7 @@ class MainWindow(wx.Frame):
 
   def update_ui(self, character=True):
     if character:
-      self.char_panel.update_character(self.game_state)
+      self.char_panel.update(self.game_state)
     else:
       self.char_panel.text_field.Clear()
     self.set_labels(self.game_state.get_choices())
@@ -209,8 +209,8 @@ class MainWindow(wx.Frame):
       return
     logs = self.game_state.apply_choice(number)
     for log in logs:
+      # TODO: We should add more logging to just the file
       self.log_panel.add_entry(log)
-    # TODO: unify names here. Also break out to general "Update" function?
     self.update_ui()
 
   def on_exit(self, evt):  # pylint: disable=unused-argument

@@ -9,7 +9,6 @@ class Item(object):
   def apply(self, character, monster, logs):  # monsters don't get items
     # Will return an error code if the item can't be used.
     pass
-  # TODO: Is there a cleaner way to do this?
   def get_name(self):
     return self.info["name"]
   def get_value(self):

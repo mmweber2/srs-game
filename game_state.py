@@ -34,6 +34,10 @@ CHOICES = {"CHAR_CREATE": ["Strength", "Stamina", "Speed", "Intellect"],
 EXPLORE_CHANCES = {"Tower": [.01, .02, .15, .04],
                    "Dungeon": [.02, .00, .20, .05],
                    "Infinity Dungeon": [.03, .03, .25, .06]}
+
+DEATH_TIME_FACTOR = {"TOWER": 1.0, "QUEST": 0.5, "DUNGEON": 0.7,
+                     "STRONGHOLD": 1.5, "RUNE_WORLD": 0.0}
+
 TOWER_LEVELS = 50
 UPDATE_TIME = 360
 DEBUG_FLOOR = None
@@ -45,7 +49,7 @@ DEBUG_TOWER_START = None
 #DEBUG_BUILDING = rooms.RareGoodsShop
 #DEBUG_FLOOR = 1
 #DEBUG_GOLD = 100000
-#DEBUG_CHARACTER = 75
+#DEBUG_CHARACTER = 60
 #DEBUG_TOWER_START = 49
 
 # TODO: http://www.pyinstaller.org/ to get packages
@@ -57,8 +61,6 @@ DEBUG_TOWER_START = None
 # TODO: Add a few options boxes. One in particular to "value" stats, so you can
 #       quickly get a value for whether a piece of equipment is better or not
 #       Maybe one for name, too, eh?
-# START HERE: Clear out some of these TODOs. Also, add traits to armor.
-# -- Have weapon and armor shops in Dungeon/Tower/Infinity have rare/epic  items
 
 # Game Balance notes:
 # -- Make it so dying in a quest and dungeon takes less time than in the Tower
@@ -69,6 +71,8 @@ DEBUG_TOWER_START = None
 # To Test:
 # -- There is some bug in apply_death from STRONGHOLD
 # -- Max buff percentage? (like say 50%)
+
+# -- Floating point error on buffs. (39% for 9 turns at level 2)
 
 class GameState(object):
   """
@@ -144,6 +148,8 @@ class GameState(object):
     summit_shops = [rooms.Inn(TOWER_LEVELS), rooms.Temple(TOWER_LEVELS),
                     rooms.Crafthall(TOWER_LEVELS)]
     tower.append(summit_shops)
+    base_floor_shops = [rooms.Inn(1), rooms.Temple(1), rooms.Alchemist(1)]
+    tower[1] = base_floor_shops
     return tower
 
   def tower_update(self):
@@ -251,7 +257,6 @@ class GameState(object):
         assert False
 
   def handle_rune_completion(self, logs):
-    self.leave_state()
     if self.rune_level == 0:
       logs.append("Unpurified, the rune dissolves into dust.")
       return
@@ -350,7 +355,6 @@ class GameState(object):
       logs.append("You continue the quest...")
       self.add_state("COMBAT")
       self.monster = self.quest.get_monster()
-      # TODO: Merge this with start_combat somehow
       logs.append("You have encountered a monster")
     elif choice_text == "Rest":
       self.pass_time(5, logs)
@@ -444,8 +448,10 @@ class GameState(object):
         self.frontier = max(self.frontier, self.floor)
         logs.append("Congratulations, you have reached floor %d" % self.floor)
         if self.floor < TOWER_LEVELS:
+          self.leave_state()
           self.change_state("OUTSIDE")
         elif self.floor == TOWER_LEVELS:
+          self.leave_state()
           self.change_state("SUMMIT")
         else:
           assert False
@@ -480,7 +486,6 @@ class GameState(object):
     self.treasure_queue = treasure
     self.handle_treasure(logs)
 
-  # TODO: Duplication with apply_choice_tower
   def apply_choice_dungeon(self, logs, choice_text):
     if choice_text == "Explore":
       if self.infinity_dungeon:
@@ -513,7 +518,6 @@ class GameState(object):
         self.leave_state()
 
   def apply_death(self, logs):
-    # TODO: Clean this up. The code flow is messy
     self.leave_state()  # COMBAT
     self.monster.buffs = []
     self.monster.debuffs = []
@@ -521,24 +525,20 @@ class GameState(object):
     self.monster = None
     if self.floor > TOWER_LEVELS:
       self.floor = TOWER_LEVELS
-    # TODO: This is hacky. Should probably have TOWER also be an add_state
-    if self.current_state() == "QUEST":
-      self.character.apply_death(logs)
+    if self.current_state() == "RUNE_WORLD":
       self.leave_state()
-    elif self.current_state() == "RUNE_WORLD":
       self.character.apply_death(logs, penalty=False)
       self.handle_rune_completion(logs)
       return
-    elif self.current_state() == "DUNGEON":
-      self.character.apply_death(logs)
+    state = self.current_state()
+    self.leave_state()  # Wherever they died
+    if self.current_state() == "SHOP":
+      self.current_shop = None
       self.leave_state()
-      if self.current_state() == "SHOP":
-        self.current_shop = None
-        self.leave_state()
-    else:
-      self.character.apply_death(logs)
+    self.character.apply_death(logs)
     self.change_state("TOWN")
-    time_lost = random.randint(1, 3 * self.floor)
+    factor = DEATH_TIME_FACTOR[state] 
+    time_lost = random.randint(1, 3 * self.floor * factor)
     self.pass_time(time_lost, logs)
     logs.append("You lost %d time units" % time_lost)
 
@@ -593,7 +593,6 @@ class GameState(object):
       result = Combat.perform_turn("Escape", None, self.character, self.monster,
                                    logs)
       self.pass_time(1, logs)
-      # TODO: Maybe monster can die in this case (eventually DoTs)
       if result == Combat.CHARACTER_DEAD:
         self.apply_death(logs)
       elif result == Combat.CHARACTER_ESCAPED:
@@ -699,7 +698,7 @@ class GameState(object):
     if choice_text == "Ascend Tower":
       self.pass_time(10, logs)
       if self.frontier <= self.floor:
-        self.change_state("TOWER")
+        self.add_state("TOWER")
         self.ascension_encounters = random.randint(5, 10)
         logs.append("Entered tower")
       else:

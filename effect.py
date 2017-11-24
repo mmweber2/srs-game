@@ -322,8 +322,6 @@ class Renew(Debuff):
     # Update the duration and effects of this buff, using the new buff.
     if buff.get_name() == self.get_name():
       self.duration = max(self.duration, buff.duration)
-      # TODO: This allows casting a strong version of the buff, then refreshing
-      #       it with a weaker version. Should we allow that?
       self.quantity = max(self.quantity, buff.quantity)
       return True
     else:

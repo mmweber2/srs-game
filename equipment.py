@@ -51,7 +51,6 @@ class Equipment(object):
         color_string = "`255,0,0`" if difference < 0 else "`0,160,0`"
         pieces.append("%s%+d %s" % (color_string, difference, attr))
     if old.slot == 0:
-      # TODO: Might be worth having an "Average Damage" attribute
       old_average = (old.attributes["Low"] + old.attributes["High"]) / 2.0
       new_average = (new.attributes["Low"] + new.attributes["High"]) / 2.0
       difference = new_average - old_average
@@ -77,7 +76,6 @@ class Equipment(object):
     return self.attributes[stat]
 
   def reforge(self, level):
-    # TODO: Fix c/p code?
     result_pieces = []
     # Stats
     max_gains = (self.rarity + 1) * (level - self.item_level)
@@ -123,7 +121,6 @@ class Equipment(object):
 
   @classmethod
   def make_stat_value(cls, item_level, rarity):
-    # TODO: Gaussian stuff?
     min_stat = max(1, item_level / 2)
     max_stat = min_stat + item_level + rarity
     return random.randint(min_stat, max_stat)
