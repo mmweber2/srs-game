@@ -32,8 +32,8 @@ class Effect(object):
   def update(self, buff):
     """Returns True if buff is the same kind, False otherwise."""
     # Update the duration and effects of this buff, using the new buff.
-    assert not self.stackable()
     if buff.get_name() == self.get_name():
+      assert not self.stackable()
       self.duration = max(self.duration, buff.duration)
       return True
     else:

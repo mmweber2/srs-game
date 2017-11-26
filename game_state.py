@@ -51,8 +51,8 @@ DEBUG_TOWER_START = None
 #DEBUG_BUILDING = rooms.RareGoodsShop
 #DEBUG_FLOOR = 1
 #DEBUG_GOLD = 100000
-#DEBUG_CHARACTER = 60
-#DEBUG_TOWER_START = 49
+#DEBUG_CHARACTER = 3
+#DEBUG_TOWER_START = 1
 
 # TODO: http://www.pyinstaller.org/ to get packages
 # TODO: It is probably not best to be passing logs around to everything?
@@ -117,7 +117,7 @@ class GameState(object):
     self.stronghold_room = 0
     if DEBUG_TOWER_START:
       self.frontier = DEBUG_TOWER_START
-      self.floor = 49
+      self.floor = DEBUG_TOWER_START
       for i in range(self.frontier):
         self.tower_lock[i] = False
 
@@ -299,6 +299,8 @@ class GameState(object):
   def apply_choice_char_create(self, logs, choice_text):
     if DEBUG_CHARACTER:
       self.character = Character.debug_character(DEBUG_CHARACTER, choice_text)
+      self.character.skills[1] = skills.HolyBlade(1)
+      self.character.skills[0] = skills.BulkUp(1)
     else:
       self.character.make_initial_equipment(choice_text)
     logs.append("Generated %s equipment." % choice_text)
