@@ -9,6 +9,8 @@ import rooms
 from items import Item
 import skills
 
+# TODO: Start here: Write Jolt Cup-level external docs
+
 TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                   rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
                   rooms.Inn, rooms.WeaponShop, rooms.Dungeon, rooms.Crafthall,
@@ -69,7 +71,6 @@ DEBUG_TOWER_START = None
 # -- Is there any way to have a build that doesn't require a heal? This is a
 #    real weakness to physical builds right now.
 # To Test:
-# -- There is some bug in apply_death from STRONGHOLD
 # -- Max buff percentage? (like say 50%)
 
 # -- Floating point error on buffs. (39% for 9 turns at level 2)
@@ -538,7 +539,7 @@ class GameState(object):
     self.character.apply_death(logs)
     self.change_state("TOWN")
     factor = DEATH_TIME_FACTOR[state] 
-    time_lost = random.randint(1, 3 * self.floor * factor)
+    time_lost = random.randint(1, int(3 * self.floor * factor))
     self.pass_time(time_lost, logs)
     logs.append("You lost %d time units" % time_lost)
 

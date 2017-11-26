@@ -58,7 +58,8 @@ class Character(object):
     self.debuffs = []
     self.runes = 0
     self.traits = collections.defaultdict(int)
-    self.reroll_counter = 0
+    random.seed()
+    self.reroll_counter = random.randint(0, 1000000)
 
   def colored_hp(self):
     hp_percent = self.current_hp * 100 / self.max_hp
@@ -325,7 +326,7 @@ class Character(object):
     while len(choices) < 4:
       best_roll, best_trait = 0.0, None
       for trait in TRAITS:
-        rerolls = self.traits[trait] + 1
+        rerolls = max(1, int((self.traits[trait] + 1) ** .5))
         roll = min(random.random() for _ in range(rerolls))
         if trait == "Libra" and self.traits[trait] > 0:  # Only one libra level
           roll = 0.0
@@ -370,7 +371,7 @@ class Character(object):
           if current_skill is None:
             rerolls = 1
           else:
-            rerolls = current_skill.level
+            rerolls = int(current_skill.level ** .5)
           roll = min(random.random() for _ in range(rerolls))
           if roll > best_roll:
             best_roll, best_skill = roll, skill_name

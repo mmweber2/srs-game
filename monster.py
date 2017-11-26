@@ -25,12 +25,13 @@ STAT_DICE = {"Strength": (12, 1),
 class Monster(object):
   def __init__(self, level, boss):
     self.stats = {}
-    self.level = max(1, int(level * random.gauss(1.0, 0.1)))
+    # TODO: Gaussian variance was not great, something else?
+    self.level = level
     self.boss = boss
     # If you modify these, make sure to modify the XP calc
     for stat in STAT_DICE:
       die, modifier = STAT_DICE[stat]
-      self.stats[stat] = self.roll_stat(level, die, modifier)
+      self.stats[stat] = self.roll_stat(self.level, die, modifier)
     if boss:
       for stat in self.stats:
         self.stats[stat] = self.stats[stat] * 1.3
@@ -44,9 +45,9 @@ class Monster(object):
     self.current_hp = self.max_hp
     if boss:
       self.name = "%s (Level %d Elite)" % (NAME_GENERATOR.generate_name(),
-                                           level)
+                                           self.level)
     else:
-      self.name = "%s (Level %d)" % (NAME_GENERATOR.generate_name(), level)
+      self.name = "%s (Level %d)" % (NAME_GENERATOR.generate_name(), self.level)
     self.traits = collections.defaultdict(int)
     self.buffs = []
     self.debuffs = []

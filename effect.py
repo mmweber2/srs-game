@@ -287,17 +287,7 @@ class Wither(Debuff):
       impacts[stat] = impact
     return impacts
 
-  def update(self, buff):
-    """Returns True if buff is the same kind, False otherwise."""
-    # Update the duration and effects of this buff, using the new buff.
-    if buff.get_name() == self.get_name():
-      self.duration = max(self.duration, buff.duration)
-      self.quantity += buff.quantity
-      return True
-    else:
-      return False
-
-class Renew(Debuff):
+class Renew(Buff):
   def __init__(self, duration, quantity):
     self.duration = duration
     self.quantity = quantity
@@ -327,7 +317,7 @@ class Renew(Debuff):
     else:
       return False
 
-class AutoLife(Debuff):
+class AutoLife(Buff):
   def __init__(self, duration, quantity):
     self.duration = duration
     self.quantity = quantity
@@ -353,3 +343,22 @@ class AutoLife(Debuff):
       return True
     else:
       return False
+
+class Aura(Buff):
+  def __init__(self, duration, quantity):
+    self.duration = duration
+    self.quantity = quantity
+
+  @classmethod
+  def stackable(cls):
+    return True
+
+  def get_name(self):
+    return "Aura"
+
+  def get_impacts(self):
+    impact = 1.00 + (.01 * self.quantity)
+    impacts = {}
+    for stat in STATS + DEFENSES:
+      impacts[stat] = impact
+    return impacts

@@ -33,7 +33,7 @@ class QuickAttack(Skill):
     desc = desc % (self.get_attack_multiple(), (self.go_again_chance() * 100))
     return desc
   def sp_cost(self):
-    return int(self.level * 6 * (1.1 ** self.level))
+    return int(self.level * 4 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     result = Combat.action_attack(None, actor, opponent, logs, "Physical",
                                   self.get_attack_multiple())
@@ -58,7 +58,7 @@ class Blind(Skill):
     desc = desc % (self.get_attack_multiple(), (self.blind_chance() * 100))
     return desc
   def sp_cost(self):
-    return int(self.level * 6 * (1.1 ** self.level))
+    return int(self.level * 4 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     result = Combat.action_attack(None, actor, opponent, logs, "Physical",
                                   self.get_attack_multiple())
@@ -82,7 +82,7 @@ class Bash(Skill):
     desc = desc % (self.get_attack_multiple(), (self.stun_chance() * 100))
     return desc
   def sp_cost(self):
-    return int(self.level * 8 * (1.1 ** self.level))
+    return int(self.level * 5 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     result = Combat.action_attack(None, actor, opponent, logs, "Physical",
                                   self.get_attack_multiple())
@@ -119,7 +119,7 @@ class HeavySwing(Skill):
     desc = desc % (self.get_attack_multiple(), (self.miss_chance() * 100))
     return desc
   def sp_cost(self):
-    return int(self.level * 7 * (1.1 ** self.level))
+    return int(self.level * 6 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     if random.random() < self.miss_chance():
       logs.append("Heavy Swing missed")
@@ -239,7 +239,7 @@ class PoisonedBlade(Skill):
     desc = desc % (self.get_attack_multiple(), (self.kill_chance() * 100))
     return desc
   def sp_cost(self):
-    return int(self.level * 5 * (1.1 ** self.level))
+    return int(self.level * 4 * (1.1 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     if random.random() < self.kill_chance() and not opponent.boss:
       logs.append("Assassinated!")
@@ -402,8 +402,36 @@ class AutoLife(Skill):
     actor.add_buff(effect.AutoLife(self.buff_duration(), self.hp_gain()))
     return Combat.TARGET_ALIVE
 
+class HolyBlade(Skill):
+  def get_name(self):
+    return "Holy Blade"
+  def get_attack_multiple(self):
+    return 0.9 + 0.1 * self.level
+  def get_aura_stacks(self):
+    return self.level
+  def get_aura_length(self):
+    return 8 + self.level
+  def get_heal_percent(self):
+    return 5 + self.level
+  def get_description(self):
+    desc = "Physical attack at %.2fx. %d stacks of Aura. %d%% heal."
+    desc = desc % (self.get_attack_multiple(), self.get_aura_stacks(),
+                   self.get_heal_percent())
+    return desc
+  def sp_cost(self):
+    return int(self.level * 6 * (1.1 ** self.level))
+  def apply_skill(self, actor, opponent, logs):
+    result = Combat.action_attack(None, actor, opponent, logs, "Physical",
+                                  self.get_attack_multiple())
+    actor.add_buff(effect.Aura(self.get_aura_length(),
+                               self.get_aura_stacks()))
+    heal = actor.max_hp * self.get_heal_percent() / 100
+    heal = actor.restore_hp(heal)
+    logs.append("You restore %d HP" % heal)
+    return result
+
 SKILLS = [QuickAttack, Blind, Bash, Protection, HeavySwing, LastStand, Surge,
           Concentrate, Swiftness, BulkUp, Cannibalize, PoisonedBlade,
           Meditate, Heal, Drain, Wither, ChainLightning, FinalStrike, Renew,
-          AutoLife]
+          AutoLife, HolyBlade]
 SKILL_NAMES = [skill().get_name() for skill in SKILLS]
