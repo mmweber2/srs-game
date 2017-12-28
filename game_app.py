@@ -5,6 +5,8 @@ from game_state import GameState
 import wx
 import wx.richtext
 
+# TODO: Look into using unicode graphics for some of this stuff
+
 def write_color_text(rtc, string):
   # Takes a wx.richtext.RichTextCtrl and writes my wacky custom color-coded
   # text out to it.

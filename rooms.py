@@ -3,6 +3,10 @@ from equipment import Equipment, RARITY
 from effect import WellRested, Blessed
 import items
 
+# TODO: Rooms ideas:
+#       Trader: For 5g? per piece, "trades" materials. Gaussian distribution
+#               again. 
+
 class Room(object):
   NO_CHANGE = 0
   LEAVE_ROOM = 1

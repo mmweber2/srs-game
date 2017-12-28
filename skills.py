@@ -259,9 +259,10 @@ class Meditate(Skill):
     return desc % self.percent_gained()
   def sp_cost(self):
     return 0
+  def chance_to_fail(self, actor):
+    return (actor.current_sp / float(actor.max_sp) * 2.0 * (.99 ** self.level))
   def apply_skill(self, actor, opponent, logs):
-    chance_to_fail = (actor.current_sp / float(actor.max_sp)) * 2.0
-    if random.random() > chance_to_fail:
+    if random.random() > self.chance_to_fail(actor):
       sp_gained = actor.restore_sp(actor.max_sp * self.percent_gained() / 100)
       logs.append("%d SP gained" % sp_gained)
     else:
@@ -308,7 +309,7 @@ class Wither(Skill):
   def get_name(self):
     return "Wither"
   def get_attack_multiple(self):
-    return 0.7 + 0.1 * self.level
+    return 0.9 + 0.1 * self.level
   def get_wither_stacks(self):
     return self.level
   def get_wither_length(self):
@@ -359,6 +360,7 @@ class FinalStrike(Skill):
   def once_per_battle(self):
     return True
   def apply_skill(self, actor, opponent, logs):
+    # TODO: Add weapon damage?
     base_damage = actor.current_hp - 1
     base_damage += (actor.current_sp * 3)
     base_damage *= 1.0 + (0.1 * self.level)

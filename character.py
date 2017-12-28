@@ -277,10 +277,10 @@ class Character(object):
     self.max_hp = new_max_hp
     self.current_hp = min(self.current_hp, self.max_hp)  # Unless max_hp drops
     new_max_sp = self.get_effective_stat("Intellect") + self.base_sp
-    difference = new_max_sp - self.max_sp
-    self.current_sp += max(0, difference)  # Don't lose HP for equipping
+    #difference = new_max_sp - self.max_sp
+    #self.current_sp += max(0, difference)  # Don't lose HP for equipping
     self.max_sp = new_max_sp
-    self.current_sp = min(self.current_sp, self.max_sp)  # Unless max_hp drops
+    self.current_sp = min(self.current_sp, self.max_sp)  # Unless max_sp drops
 
   def level_up(self, logs):
     for stat in self.stats:
@@ -353,6 +353,9 @@ class Character(object):
     # To get around this, we probably would need to store the choices in
     # game_state and know to look at them for only levelling up.
     # TODO: Could probably fix this by using a "Room" to level up
+    # TODO: Have one of the skills be a new one, even if character has all
+    #       three skills? In this case, we'd have to replace one of the existing
+    #       skills, which might get tricky.
     choices = []
     random.seed((self.exp, self.current_hp, self.gold, self.reroll_counter))
     choices.append("Improve stats")

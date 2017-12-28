@@ -1,5 +1,8 @@
 import effect
 
+# TODO: Add substitute (automatic rez when you die)
+# TODO: Add names to items (based on stats / slot)
+
 class Item(object):
   UNUSABLE = 0
   def __init__(self):

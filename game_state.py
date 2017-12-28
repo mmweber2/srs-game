@@ -10,6 +10,8 @@ from items import Item
 import skills
 
 # TODO: Start here: Write Jolt Cup-level external docs
+# TODO: Log more. Certainly including victory
+# TODO: Equipment keeping predictor?
 
 TOWN_BUILDINGS = [rooms.ArmorShop, rooms.Enchanter, rooms.Forge,
                   rooms.Alchemist, rooms.TrainingRoom, rooms.Temple,
@@ -51,8 +53,8 @@ DEBUG_TOWER_START = None
 #DEBUG_BUILDING = rooms.RareGoodsShop
 #DEBUG_FLOOR = 1
 #DEBUG_GOLD = 100000
-#DEBUG_CHARACTER = 3
-#DEBUG_TOWER_START = 1
+#DEBUG_CHARACTER = 70
+#DEBUG_TOWER_START = 49
 
 # TODO: http://www.pyinstaller.org/ to get packages
 # TODO: It is probably not best to be passing logs around to everything?
@@ -299,8 +301,9 @@ class GameState(object):
   def apply_choice_char_create(self, logs, choice_text):
     if DEBUG_CHARACTER:
       self.character = Character.debug_character(DEBUG_CHARACTER, choice_text)
-      self.character.skills[1] = skills.HolyBlade(1)
-      self.character.skills[0] = skills.BulkUp(1)
+      self.character.skills[1] = skills.HolyBlade(7)
+      self.character.skills[0] = skills.BulkUp(7)
+      self.character.runes = 5
     else:
       self.character.make_initial_equipment(choice_text)
     logs.append("Generated %s equipment." % choice_text)
@@ -323,6 +326,7 @@ class GameState(object):
       self.add_state("USE_ITEM")
     elif choice_text == "Leave Rune":
       self.pass_time(0, logs)
+      self.leave_state()
       logs.append("You leave the world of the rune")
       self.handle_rune_completion(logs)
 
