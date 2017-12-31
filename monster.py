@@ -1,7 +1,14 @@
 import random
 from equipment import Equipment
 from effect import Debuff, Effect
-from name_generator import NameGenerator
+#from name_generator import NameGenerator
+
+class NameGenerator(object):
+  def __init__(self, filename, shortest=3, longest=100):
+      pass
+
+  def generate_name(self):
+      return "Monster"
 
 STAT_ORDER = ["Strength", "Intellect", "Speed", "Stamina", "Defense",
               "Magic Defense"]
