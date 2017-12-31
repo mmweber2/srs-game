@@ -21,7 +21,7 @@ class Item(object):
 
 class MinorHealthPotion(Item):
   def __init__(self):
-    super(MinorHealthPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Minor HP Pot",
                  "value": 100,
                  "item_level": 1}
@@ -31,7 +31,7 @@ class MinorHealthPotion(Item):
 
 class HealthPotion(Item):
   def __init__(self):
-    super(HealthPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "HP Pot",
                  "value": 500,
                  "item_level": 10}
@@ -41,7 +41,7 @@ class HealthPotion(Item):
 
 class MajorHealthPotion(Item):
   def __init__(self):
-    super(MajorHealthPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Major HP Pot",
                  "value": 2500,
                  "item_level": 30}
@@ -51,7 +51,7 @@ class MajorHealthPotion(Item):
 
 class SuperHealthPotion(Item):
   def __init__(self):
-    super(SuperHealthPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Super HP Pot",
                  "value": 15000,
                  "item_level": 30}
@@ -61,7 +61,7 @@ class SuperHealthPotion(Item):
 
 class MinorMagicPotion(Item):
   def __init__(self):
-    super(MinorMagicPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Minor SP Pot",
                  "value": 200,
                  "item_level": 1}
@@ -71,7 +71,7 @@ class MinorMagicPotion(Item):
 
 class MagicPotion(Item):
   def __init__(self):
-    super(MagicPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "SP Pot",
                  "value": 1200,
                  "item_level": 10}
@@ -81,7 +81,7 @@ class MagicPotion(Item):
 
 class MajorMagicPotion(Item):
   def __init__(self):
-    super(MajorMagicPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Major SP Pot",
                  "value": 7500,
                  "item_level": 30}
@@ -91,7 +91,7 @@ class MajorMagicPotion(Item):
 
 class InnFood(Item):
   def __init__(self):
-    super(InnFood, self).__init__()
+    super().__init__()
     self.info = {"name": "Inn-made Bento",
                  "value": 0,
                  "item_level": 1}
@@ -106,7 +106,7 @@ class InnFood(Item):
 
 class MinorSurgePotion(Item):
   def __init__(self):
-    super(MinorSurgePotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Minor Surge Pot",
                  "value": 100,
                  "item_level": 1}
@@ -116,7 +116,7 @@ class MinorSurgePotion(Item):
 
 class SurgePotion(Item):
   def __init__(self):
-    super(SurgePotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Surge Pot",
                  "value": 500,
                  "item_level": 10}
@@ -126,7 +126,7 @@ class SurgePotion(Item):
 
 class MajorSurgePotion(Item):
   def __init__(self):
-    super(MajorSurgePotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Major Surge Pot",
                  "value": 2500,
                  "item_level": 30}
@@ -136,7 +136,7 @@ class MajorSurgePotion(Item):
 
 class MinorConcentratePotion(Item):
   def __init__(self):
-    super(MinorConcentratePotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Minor Concentrate Pot",
                  "value": 100,
                  "item_level": 1}
@@ -146,7 +146,7 @@ class MinorConcentratePotion(Item):
 
 class ConcentratePotion(Item):
   def __init__(self):
-    super(ConcentratePotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Concentrate Pot",
                  "value": 500,
                  "item_level": 10}
@@ -156,7 +156,7 @@ class ConcentratePotion(Item):
 
 class MajorConcentratePotion(Item):
   def __init__(self):
-    super(MajorConcentratePotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Major Concentrate Pot",
                  "value": 2500,
                  "item_level": 30}
@@ -166,7 +166,7 @@ class MajorConcentratePotion(Item):
 
 class MinorSwiftnessPotion(Item):
   def __init__(self):
-    super(MinorSwiftnessPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Minor Swiftness Pot",
                  "value": 100,
                  "item_level": 1}
@@ -176,7 +176,7 @@ class MinorSwiftnessPotion(Item):
 
 class SwiftnessPotion(Item):
   def __init__(self):
-    super(SwiftnessPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Swiftness Pot",
                  "value": 500,
                  "item_level": 10}
@@ -186,7 +186,7 @@ class SwiftnessPotion(Item):
 
 class MajorSwiftnessPotion(Item):
   def __init__(self):
-    super(MajorSwiftnessPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Major Swiftness Pot",
                  "value": 2500,
                  "item_level": 30}
@@ -196,7 +196,7 @@ class MajorSwiftnessPotion(Item):
 
 class MinorBulkUpPotion(Item):
   def __init__(self):
-    super(MinorBulkUpPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Minor BulkUp Pot",
                  "value": 300,
                  "item_level": 1}
@@ -206,7 +206,7 @@ class MinorBulkUpPotion(Item):
 
 class BulkUpPotion(Item):
   def __init__(self):
-    super(BulkUpPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "BulkUp Pot",
                  "value": 1500,
                  "item_level": 10}
@@ -216,7 +216,7 @@ class BulkUpPotion(Item):
 
 class MajorBulkUpPotion(Item):
   def __init__(self):
-    super(MajorBulkUpPotion, self).__init__()
+    super().__init__()
     self.info = {"name": "Major BulkUp Pot",
                  "value": 7500,
                  "item_level": 30}
