@@ -130,7 +130,7 @@ class GameState(object):
   @staticmethod
   def generate_quests():
     quests = [None]
-    for i in xrange(1, TOWER_LEVELS + 1):
+    for i in range(1, TOWER_LEVELS + 1):
       quests.append(Quest(i))
     return quests
 
@@ -157,7 +157,7 @@ class GameState(object):
 
   def tower_update(self):
     self.tower_quests = self.generate_quests()
-    for level in xrange(1, TOWER_LEVELS + 1):
+    for level in range(1, TOWER_LEVELS + 1):
       for shop in range(3):
         self.towns[level][shop].refresh()
 
@@ -181,7 +181,7 @@ class GameState(object):
     return self.state[-1]
 
   def faction_update(self, base_floor):
-    for floor in xrange(max(1, base_floor - 4),
+    for floor in range(max(1, base_floor - 4),
                         min(base_floor + 4, TOWER_LEVELS) + 1):
       difference = abs(floor - base_floor)
       multiplier = .95 + (.01 * difference)
@@ -552,7 +552,7 @@ class GameState(object):
   def dungeon_victory_update(self, base_floor):
     if self.infinity_dungeon:
       return
-    for floor in xrange(max(1, base_floor - 3),
+    for floor in range(max(1, base_floor - 3),
                         min(base_floor + 3, TOWER_LEVELS) + 1):
       difference = abs(floor - base_floor)
       multiplier = 1.0 - (.008 / (2 ** abs(difference)))
