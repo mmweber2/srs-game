@@ -394,7 +394,7 @@ class EquipmentShop(Room):
     if self.buying:
       return self.apply_choice_buy_equipment(choice_text, logs, character)
     elif choice_text.startswith("%s #" % self.shop_type):
-      choice = int(choice_text[-1])
+      choice = int(choice_text[len(choice_text) - 1])
       self.shop_choice = choice - 1
       self.buying = True
       logs.append("You consider %s..." % choice_text)
@@ -622,7 +622,7 @@ class Alchemist(Room):
 
   def apply_choice(self, choice_text, logs, character):
     if choice_text.startswith("Choice #"):
-      choice = int(choice_text[-1]) - 1
+      choice = int(choice_text[len(choice_text) - 1]) - 1
       item = self.inventory[choice]
       if character.gold >= self.get_cost(item):
         result = character.add_item(item)
