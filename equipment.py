@@ -128,7 +128,9 @@ class Equipment(object):
     return self.attributes.get("Type", 0)
 
   def get_recycled_materials(self):
+    __pragma__ ('opov')
     materials = [0] * len(RARITY)
+    __pragma__ ('noopov')
     count = 0
     for _ in range(self.item_level):
       if random.random() > .7 ** count:
@@ -199,9 +201,11 @@ class Equipment(object):
     pieces.append(SLOTS[self.slot])
     pieces.append(": ")
     pieces.append("<span style=\"color: {}\">".format(RARITY_COLORS[self.rarity]))
+    __pragma__ ('opov')
     pieces.append("({}{} {}) ".format(self.item_level,
                                   "*" * self.enchant_count,
                                   RARITY[self.rarity][0]))
+    __pragma__ ('noopov')
     if SLOTS[self.slot] == "Weapon":
       pieces.append("({} {}-{}) ".format(self.attributes.get("Type", 0),
                                      self.attributes.get("Low", 0),

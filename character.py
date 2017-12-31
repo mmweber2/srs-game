@@ -51,7 +51,9 @@ class Character(object):
     self.current_sp = self.max_sp
     self.level = 1
     self.exp = 0
+    __pragma__ ('opov')
     self.materials = [0] * len(RARITY)
+    __pragma__ ('noopov')
     self.buffs = []
     self.debuffs = []
     self.runes = 0

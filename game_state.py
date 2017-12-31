@@ -31,7 +31,7 @@ CHOICES = {"CHAR_CREATE": ["Strength", "Stamina", "Speed", "Intellect"],
            "STRONGHOLD": ["Enter Room", "Rest", "Item", "Leave Stronghold"],
            "DUNGEON": ["Explore", "Rest", "Item", "Leave Dungeon"],
            "LOOT_EQUIPMENT": ["", "Keep Current", "Keep New", ""],
-           "VICTORY": [""] * 4,
+           "VICTORY": ["", "", "", ""],
            "ACCEPT_QUEST": ["", "Accept Quest", "Decline Quest", ""]}
 
 #                           Hoard,Shop,Chest,Boss
@@ -96,9 +96,11 @@ class GameState(object):
     self.time_spent = 0
     self.energy = 200
     self.towns = self.generate_towns()
+    __pragma__ ('opov')
     self.tower_lock = [True] * (TOWER_LEVELS + 1)
     self.tower_lock[1] = False
     self.tower_faction = [1.0] * (TOWER_LEVELS + 1)
+    __pragma__ ('noopov')
     self.tower_update_ready = False
     self.tower_quests = self.generate_quests()
     # Number of encounters remaining in current tower ascension
@@ -230,7 +232,9 @@ class GameState(object):
       return self.character.get_skill_choices()
       # Next: Handle the trait choice, then implement the traits
     elif current_state == "USE_SKILL":
+      __pragma__ ('opov')
       choices = [""] * (3 - len(self.character.skills))
+      __pragma__ ('noopov')
       for skill in self.character.skills:
         if (skill.sp_cost() > self.character.current_sp or
             (skill.once_per_battle() and skill.get_name() in self.skills_used)):
