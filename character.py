@@ -177,7 +177,7 @@ class Character(object):
     if sum(self.traits.values()) == 0:
       pieces.append("None")
     else:
-      for trait in self.traits:
+      for trait in self.traits.keys():
         if self.traits.get(trait, 0) > 0:
           pieces.append("%s: %d  " % (trait, self.traits.get(trait, 0)))
     pieces.append("\n")
@@ -282,7 +282,7 @@ class Character(object):
     self.current_sp = min(self.current_sp, self.max_sp)  # Unless max_sp drops
 
   def level_up(self, logs):
-    for stat in self.stats:
+    for stat in self.stats.keys():
       increase = random.randint(1, 3)
       if increase > 0:
         self.stats[stat] += increase
@@ -324,7 +324,7 @@ class Character(object):
       choices.append("Get New Traits")
     while len(choices) < 4:
       best_roll, best_trait = 0.0, None
-      for trait in TRAITS:
+      for trait in TRAITS.keys():
         rerolls = max(1, int((self.traits.get(trait, 0) + 1) ** .5))
         roll = min(random.random() for _ in range(rerolls))
         if trait == "Libra" and self.traits.get(trait, 0) > 0:  # Only one libra level
@@ -339,7 +339,7 @@ class Character(object):
     if trait == "Get New Traits":
       self.reroll_counter += 1
       return False
-    assert trait in TRAITS
+    #assert trait in TRAITS
     self.traits[trait] = self.traits.get(trait, 0) + 1
     return True
 
@@ -389,7 +389,7 @@ class Character(object):
 
   def learn_skill(self, skill_name):
     if skill_name == "Improve stats":
-      for stat in self.stats:
+      for stat in self.stats.keys():
         self.stats[stat] += 1
       self.recalculate_maxes()
       return True
