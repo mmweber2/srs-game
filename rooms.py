@@ -452,7 +452,7 @@ class RareGoodsShop(EquipmentShop):
   def refresh(self):
     self.inventory = []
     for _ in range(3):
-      level = max(1, self.level + int(random.gauss(0, 3)))
+      level = max(1, self.level)
       rarity = random.randint(2, 4)
       slot = random.randint(0, 4)
       equip = Equipment.get_new_armor(level, slot=slot, rarity=rarity)
@@ -694,7 +694,7 @@ class Crafthall(Room):
       character.gold -= 10 * rarity * self.level
       rarity = self.get_craft_rarity(rarity)
       self.crafting = True
-      level = int(self.level + max(0, random.gauss(0, 1)))
+      level = int(self.level)
       self.crafted_piece = Equipment.get_new_armor(level, rarity=rarity)
       return (3, Room.NO_CHANGE)
     else:

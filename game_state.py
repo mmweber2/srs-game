@@ -488,7 +488,7 @@ class GameState(object):
         rarity = min(random.randint(1, 4) for _ in range(3))
         if self.infinity_dungeon:
           rarity = max(rarity, min(random.randint(1, 4) for _ in range(3)))
-        level = max(1, int(self.floor + random.gauss(0, 1)))
+        level = max(1, int(self.floor))
         treasure.append(Equipment.get_new_armor(level, rarity))
     self.treasure_queue = treasure
     self.handle_treasure(logs)

@@ -96,8 +96,8 @@ class Equipment(object):
     # Weapon Stats
     if self.slot == 0:
       rarity_factor = 1.0 + (.1 * self.rarity)
-      low = int((10 + 5 * level) * random.gauss(1, .2) * rarity_factor)
-      high = int((20 + 7 * level) * random.gauss(1, .2) * rarity_factor)
+      low = int((10 + 5 * level) * (.9 + random.random() * .2) * rarity_factor)
+      high = int((20 + 7 * level) * (.9 + random.random() * .2) * rarity_factor)
       old_low = self.attributes.get("Low", 0)
       old_high = self.attributes.get("High", 0)
       old_average = (old_low + old_high) / 2.0
@@ -133,7 +133,7 @@ class Equipment(object):
     for _ in xrange(self.item_level):
       if random.random() > .7 ** count:
         continue
-      rarity = int(self.rarity + random.gauss(0, 1))
+      rarity = int(self.rarity + random.randint(-2, 2))
       if rarity < 0:
         continue
       if rarity >= len(RARITY):
@@ -178,8 +178,8 @@ class Equipment(object):
       attributes[defense] = cls.make_stat_value(item_level, rarity)
     if SLOTS[slot] == "Weapon":
       rarity_factor = 1.0 + (.1 * rarity)
-      low = int((10 + 5 * item_level) * random.gauss(1, .2) * rarity_factor)
-      high = int((20 + 7 * item_level) * random.gauss(1, .2) * rarity_factor)
+      low = int((10 + 5 * item_level) * (.9 + random.random() * .2) * rarity_factor)
+      high = int((20 + 7 * item_level) * (.9 + random.random() * .2) * rarity_factor)
       if low > high:
         low, high = high, low
       if low < 1:
