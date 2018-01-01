@@ -587,7 +587,14 @@ class Alchemist(Room):
     inventory = []
     for _ in range(3):
       pots = [x() for x in self.possible_items]   # Shouldn't redefine item
-      inventory.append(max((self.item_rate(p), p) for p in pots)[1])
+      best_pot = None
+      best_score = 0
+      for p in pots:
+        score = self.item_rate(p)
+        if score > best_score:
+          best_pot = p
+          best_score = score
+      inventory.append(best_pot)
     return inventory
 
   def refresh(self):
