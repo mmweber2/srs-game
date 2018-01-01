@@ -161,18 +161,18 @@ class Character(object):
 
   def __str__(self):
     pieces = []
-    pieces.append("Character:\n")
-    pieces.append("HP: {} / {}\n".format(self.current_hp, self.max_hp))
-    pieces.append("SP: {} / {}\n".format(self.current_sp, self.max_sp))
+    pieces.append("Character:<br>")
+    pieces.append("HP: {} / {}<br>".format(self.current_hp, self.max_hp))
+    pieces.append("SP: {} / {}<br>".format(self.current_sp, self.max_sp))
     pieces.append("Level: {} ".format(self.level))
-    pieces.append("({} / {})\n".format(self.exp, self.next_level_exp()))
+    pieces.append("({} / {})<br>".format(self.exp, self.next_level_exp()))
     for stat in STAT_ORDER:
       pieces.append("{}: {} ({})  ".format(stat, self.get_effective_stat(stat),
                                        self.stats[stat]))
-    pieces.append("\n")
-    pieces.append("Equipment:\n")
+    pieces.append("<br>")
+    pieces.append("Equipment:<br>")
     for piece in self.equipment:
-      pieces.append(str(piece) + "\n")
+      pieces.append(str(piece) + "<br>")
     pieces.append("Traits: ")
     if sum(self.traits.values()) == 0:
       pieces.append("None")
@@ -180,34 +180,34 @@ class Character(object):
       for trait in self.traits.keys():
         if self.traits.get(trait, 0) > 0:
           pieces.append("{}: {}  ".format(trait, self.traits.get(trait, 0)))
-    pieces.append("\n")
+    pieces.append("<br>")
     pieces.append("Skills: ")
     if not self.skills:
       pieces.append("None")
     else:
       for skill in self.skills:
         pieces.append("{}: {}  ".format(skill.get_name(), skill.level))
-    pieces.append("\n")
+    pieces.append("<br>")
     pieces.append("Materials: ")
     if sum(self.materials) == 0:
-      pieces.append("None\n")
+      pieces.append("None<br>")
     else:
       for i in range(len(self.materials)):
         if self.materials[i] > 0:
           pieces.append("{}: {}  ".format(RARITY[i], self.materials[i]))
-      pieces.append("\n")
+      pieces.append("<br>")
     pieces.append("Buffs: ")
     pieces.append(", ".join(str(buff) for buff in self.buffs))
     if self.buffs:
-      pieces.append("\n")
+      pieces.append("<br>")
     else:
-      pieces.append("None\n")
+      pieces.append("None<br>")
     pieces.append("Items: ")
     if self.items:
       pieces.append(", ".join(item.get_name() for item in self.items))
-      pieces.append("\n")
+      pieces.append("<br>")
     else:
-      pieces.append("None\n")
+      pieces.append("None<br>")
     pieces.append("Corrupted runes: {}".format(self.runes))
     return "".join(pieces)
 

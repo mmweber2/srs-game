@@ -27,11 +27,11 @@ class Equipment(object):
   @staticmethod
   def equipment_comparison_text(current, new):
     pieces = []
-    pieces.append("Current Equipment:\n")
+    pieces.append("Current Equipment:<br>")
     pieces.append(str(current))
-    pieces.append("\nNew Equipment:\n")
+    pieces.append("<br>New Equipment:<br>")
     pieces.append(str(new))
-    pieces.append("\nComparison:\n")
+    pieces.append("<br>Comparison:<br>")
     pieces.append(Equipment.comparison_text(current, new))
     return "".join(pieces)
 
@@ -57,7 +57,7 @@ class Equipment(object):
       pieces.append("{}{:+0.1f} average damage".format(color, difference))
       if old.attributes.get("Type", 0) != new.attributes.get("Type", 0):
         pieces.append("`0,0,0`Weapon type change")
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def enchant(self):
     self.enchant_count += 1

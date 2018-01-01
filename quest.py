@@ -49,7 +49,7 @@ class Quest(object):
     pieces.append("Reward: {} GP, {} XP, {} treasures".format(self.gp_reward,
                                                           self.xp_reward,
                                                           self.treasure_reward))
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def get_treasure(self):
     treasure = []

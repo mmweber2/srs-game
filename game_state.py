@@ -771,7 +771,7 @@ class GameState(object):
     pieces = []
     for i, item in enumerate(self.character.items):
       pieces.append("Use Item #{}: {}".format(i + 1, item.get_name()))
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def trait_text(self):
     pieces = []
@@ -780,13 +780,13 @@ class GameState(object):
     for choice in choices:
       if choice in TRAITS:
         pieces.append("{}: {}".format(choice, TRAITS[choice]))
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def skill_text(self):
     pieces = []
     pieces.append("Select a skill")
     pieces.extend(self.get_choices())
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def skill_select_text(self):
     pieces = []
@@ -797,16 +797,16 @@ class GameState(object):
         already_used = "(Already Used)"
       else:
         already_used = ""
-      pieces.append("{}: {} sp {}{}\n{}".format(skill.get_name(), skill.sp_cost(),
+      pieces.append("{}: {} sp {}{}<br>{}".format(skill.get_name(), skill.sp_cost(),
                                             insufficient_sp, already_used,
                                             skill.get_description()))
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def combat_text(self):
     buffs = ", ".join(str(buff) for buff in self.character.buffs)
     buffs = buffs or "None"
     libra_string = self.monster.libra_string(self.character.traits.get("Libra", 0))
-    return "Your HP: {}\nBuffs: {}\n\n{}".format(self.character.colored_hp(),
+    return "Your HP: {}<br>Buffs: {}<br><br>{}".format(self.character.colored_hp(),
                                              buffs, libra_string)
 
   def panel_text(self):

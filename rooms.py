@@ -65,7 +65,7 @@ class TrainingRoom(Room):
                   (self.xp_training_cost(), self.level * 25))
     pieces.append("Gain Stats: {} gold (+1 random stat)".format
                   (self.stat_training_cost(character)))
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def apply_choice(self, choice_text, logs, character):
     if choice_text == "Gain XP":
@@ -132,7 +132,7 @@ class Enchanter(Room):
       material_cost = self.enchant_cost_materials(item)
       pieces.append("Enchant {}: {} gold and {} {} materials".format
                     (name, cost, material_cost, RARITY[item.rarity]))
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def normal_text(self, character):
     pieces = []
@@ -147,7 +147,7 @@ class Enchanter(Room):
                   (self.enchant_cost_gold(acc),
                    self.enchant_cost_materials(acc),
                    RARITY[acc.rarity]))
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def get_text(self, character):
     if self.enchanting_armor:
@@ -262,7 +262,7 @@ class Forge(Room):
     else:
       pieces.append("Weapon cannot currently be reforged")
     pieces.append("Reforge Armor: [submenu]")
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def forge_armor_text(self, character):
     pieces = []
@@ -275,7 +275,7 @@ class Forge(Room):
                       (name, cost, material_cost, RARITY[item.rarity]))
       else:
         pieces.append("{} cannot currently be reforged".format(name))
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def get_text(self, character):
     if self.forging_armor:
@@ -363,7 +363,7 @@ class EquipmentShop(Room):
           pieces.append(str(item))
       if not pieces:
         pieces.append("You cleaned 'em out!")
-      return "\n".join(pieces)
+      return "<br>".join(pieces)
 
   def apply_choice_buy_equipment(self, choice_text, logs, character):
     if choice_text == "Keep Current":
@@ -481,7 +481,7 @@ class Inn(Room):
     pieces.append("Rest: ({}g + 30 time) Well Rested buff".format
                   (self.get_rest_cost()))
     pieces.append("Buy Food: {} gold".format(self.get_food_cost()))
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def apply_choice(self, choice_text, logs, character):
     if choice_text == "Rest":
@@ -530,7 +530,7 @@ class Temple(Room):
     pieces = []
     pieces.append("Blessing: ({}g) Blessed buff".format(self.get_blessing_cost()))
     pieces.append("Purify Rune: Enter the rune world to cleanse a rune")
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def get_blessing_cost(self):
     return int(50 * self.level * self.faction_rate)
@@ -618,7 +618,7 @@ class Alchemist(Room):
                                                     self.get_cost(item)))
       else:
         pieces.append("")
-    return "\n".join(pieces)
+    return "<br>".join(pieces)
 
   def apply_choice(self, choice_text, logs, character):
     if choice_text.startswith("Choice #"):
@@ -676,7 +676,7 @@ class Crafthall(Room):
                    .format(self.level * 20, self.level, self.level))
       pieces.append("Craft Epic: {} gold, {} common mats, {} epic mats"
                    .format(self.level * 30, self.level, self.level))
-      return "\n".join(pieces)
+      return "<br>".join(pieces)
 
   @classmethod
   def get_craft_rarity(cls, starting_rarity):

@@ -75,42 +75,42 @@ class Monster(object):
 
   def libra_string(self, libra_level):
     pieces = []
-    pieces.append("Name: {}\n".format(self.name))
+    pieces.append("Name: {}<br>".format(self.name))
     if libra_level == 0:
-      pieces.append("HP: {}\n".format(self.hp_string()))
+      pieces.append("HP: {}<br>".format(self.hp_string()))
     else:
-      pieces.append("HP: {} / {}\n".format(self.current_hp, self.max_hp))
+      pieces.append("HP: {} / {}<br>".format(self.current_hp, self.max_hp))
     pieces.append("Debuffs: ")
     pieces.append(", ".join(str(debuff) for debuff in self.debuffs))
     if self.debuffs:
-      pieces.append("\n")
+      pieces.append("<br>")
     else:
-      pieces.append("None\n")
+      pieces.append("None<br>")
     if libra_level > 0:
       for stat in STAT_ORDER:
         pieces.append("{}: {} ({})  ".format(stat, self.get_effective_stat(stat),
                                          self.stats[stat]))
-        pieces.append("\n")
+        pieces.append("<br>")
     return "".join(pieces)
 
   def __str__(self):
     pieces = []
-    pieces.append("Name: {}\n".format(self.name))
-    pieces.append("HP: {}\n".format(self.hp_string()))
+    pieces.append("Name: {}<br>".format(self.name))
+    pieces.append("HP: {}<br>".format(self.hp_string()))
     pieces.append("Debuffs: ")
     pieces.append(", ".join(str(debuff) for debuff in self.debuffs))
     if self.debuffs:
-      pieces.append("\n")
+      pieces.append("<br>")
     else:
-      pieces.append("None\n")
-    pieces.append("***DEBUG***\n")
+      pieces.append("None<br>")
+    pieces.append("***DEBUG***<br>")
     for stat in self.stats.keys():
       pieces.append("{}: {} ({})  ".format(stat, self.get_effective_stat(stat),
                                        self.stats[stat]))
-      pieces.append("\n")
-    pieces.append("stats: {0!r}\n".format(self.stats))
-    pieces.append("HP: {} / {}\n".format(self.current_hp, self.max_hp))
-    pieces.append("XP value: {}\n".format(self.calculate_exp()))
+      pieces.append("<br>")
+    pieces.append("stats: {0!r}<br>".format(self.stats))
+    pieces.append("HP: {} / {}<br>".format(self.current_hp, self.max_hp))
+    pieces.append("XP value: {}<br>".format(self.calculate_exp()))
     return "".join(pieces)
 
   def calculate_exp(self):
