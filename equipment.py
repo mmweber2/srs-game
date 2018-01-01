@@ -159,8 +159,10 @@ class Equipment(object):
 
   def get_value(self):
     value = self.item_level * 25
+    __pragma__ ('opov')
     for attribute in STATS + DEFENSES:
       value += self.attributes.get(attribute, 0) ** 2
+    __pragma__ ('noopov')
     value *= max(1, self.rarity - 1)
     if self.slot == 0:  # Weapon
       average_damage = (self.attributes.get("Low", 0) + self.attributes.get("High", 0)) / 2
