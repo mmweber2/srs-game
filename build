@@ -1,5 +1,6 @@
 #!/bin/sh
-transcrypt -t srs.py
+rm -rf __javascript__
+transcrypt -e 6 -t srs.py
 
 # -- Apply javascript hacks --
 

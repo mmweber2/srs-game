@@ -197,6 +197,7 @@ class Character(object):
           pieces.append("{}: {}  ".format(RARITY[i], self.materials[i]))
       pieces.append("<br>")
     pieces.append("Buffs: ")
+    # NB: Example of a generator function requiring "-e 6" flag.
     pieces.append(", ".join(str(buff) for buff in self.buffs))
     if self.buffs:
       pieces.append("<br>")
