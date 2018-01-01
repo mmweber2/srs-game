@@ -1,2 +1,5 @@
 #!/bin/sh
 transcrypt srs.py
+
+# Apply javascript hacks.
+sed -i '' -e 's/strings.join (/Array.prototype.join.call (strings, /' __javascript__/srs.js
