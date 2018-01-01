@@ -33,6 +33,16 @@ RED_HP = "rgb(255,0,0)"
 # -- Lightning Strike (chance to automatically go again after an attack)
 # -- Dodge (chance to avoid all damage from an attack)
 
+def min_roll_n_times(n):
+  # NB: Unrolled version of:
+  #return roll = min(random.random() for _ in range(n))
+  roll = 1.0
+  for _ in range(n):
+    r = random.random()
+    if r < roll:
+      roll = r
+  return roll
+
 class Character(object):
   def __init__(self):
     # Weapon, Helm, Chest, Legs, Accessory
@@ -327,13 +337,14 @@ class Character(object):
       best_roll, best_trait = 0.0, None
       for trait in TRAITS.keys():
         rerolls = max(1, int((self.traits.get(trait, 0) + 1) ** .5))
-        roll = min(random.random() for _ in range(rerolls))
+        roll = min_roll_n_times(rerolls)
         if trait == "Libra" and self.traits.get(trait, 0) > 0:  # Only one libra level
           roll = 0.0
         if roll > best_roll:
           best_roll, best_trait = roll, trait
       if best_trait not in choices:
         choices.append(best_trait)
+
     return choices
 
   def learn_trait(self, trait):
@@ -375,7 +386,7 @@ class Character(object):
             rerolls = 1
           else:
             rerolls = int(current_skill.level ** .5)
-          roll = min(random.random() for _ in range(rerolls))
+          roll = min_roll_n_times(rerolls)
           if roll > best_roll:
             best_roll, best_skill = roll, skill_name
         if best_skill not in choices:
