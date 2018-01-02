@@ -111,9 +111,9 @@ class HeavySwing(Skill):
   def get_name(self):
     return "Heavy Swing"
   def get_attack_multiple(self):
-    return 2.0 + 0.4 * self.level
+    return 2.0 + 0.2 * self.level
   def miss_chance(self):
-    return max(0.05, 0.3 - (0.02 * self.level))
+    return max(0.05, 0.3 - (0.015 * self.level))
   def get_description(self):
     desc = "Physical attack with %.2f multiplier, %d%% chance to miss."
     desc = desc % (self.get_attack_multiple(), (self.miss_chance() * 100))
@@ -253,14 +253,14 @@ class Meditate(Skill):
   def get_name(self):
     return "Meditate"
   def percent_gained(self):
-    return 8 + self.level * 2
+    return 8 + self.level
   def get_description(self):
     desc = "Gain %d%% of max SP. Chance to fail based on current SP."
     return desc % self.percent_gained()
   def sp_cost(self):
     return 0
   def chance_to_fail(self, actor):
-    return (actor.current_sp / float(actor.max_sp) * 2.0 * (.99 ** self.level))
+    return (actor.current_sp / float(actor.max_sp) * (.99 ** self.level))
   def apply_skill(self, actor, opponent, logs):
     if random.random() > self.chance_to_fail(actor):
       sp_gained = actor.restore_sp(actor.max_sp * self.percent_gained() / 100)
