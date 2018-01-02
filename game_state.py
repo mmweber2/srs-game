@@ -115,6 +115,8 @@ class GameState(object):
     self.levelups = 0
     self.skillups = 0
     self.skills_used = set()
+    self.skill_choices = []
+    self.trait_choices = []
     self.infinity_dungeon = False
     self.stronghold_room = 0
     if DEBUG_TOWER_START:
@@ -224,9 +226,9 @@ class GameState(object):
       choices.append("Never Mind")
       return choices
     elif current_state == "LEVEL_UP":
-      return self.character.get_trait_choices()
+      return self.trait_choices
     elif current_state == "LEVEL_UP_SKILL":
-      return self.character.get_skill_choices()
+      return self.skill_choices
       # Next: Handle the trait choice, then implement the traits
     elif current_state == "USE_SKILL":
       choices = [""] * (3 - len(self.character.skills))
@@ -393,6 +395,8 @@ class GameState(object):
       if levelups > 0:
         self.levelups = levelups
         self.skillups = levelups
+        self.trait_choices = self.character.get_trait_choices()
+        self.skill_choices = self.character.get_skill_choices()
         self.add_state("LEVEL_UP")
       self.handle_treasure(logs)
 
@@ -544,7 +548,7 @@ class GameState(object):
       self.leave_state()
     self.character.apply_death(logs)
     self.change_state("TOWN")
-    factor = DEATH_TIME_FACTOR[state] 
+    factor = DEATH_TIME_FACTOR[state]
     time_lost = random.randint(1, int(3 * self.floor * factor))
     self.pass_time(time_lost, logs)
     logs.append("You lost %d time units" % time_lost)
@@ -631,6 +635,8 @@ class GameState(object):
       self.levelups -= 1
       if self.levelups == 0:
         self.change_state("LEVEL_UP_SKILL")
+      else:
+        self.trait_choices = self.character.get_trait_choices()
 
   def apply_choice_level_up_skill(self, logs, choice_text):
     assert self.skillups > 0
@@ -639,6 +645,8 @@ class GameState(object):
       self.skillups -= 1
       if self.skillups == 0:
         self.leave_state()
+      else:
+        self.skill_choices = self.character.get_skill_choices()
 
   def apply_choice_town(self, logs, choice_text):
     if choice_text == "Leave Town":

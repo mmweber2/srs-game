@@ -309,15 +309,6 @@ class Character(object):
       self.materials[i] += materials[i]
 
   def get_trait_choices(self):
-    # TODO: DIRTY DIRTY HACK
-    # The problem is, in the game_state, it's assumed that multiple calls to
-    # get_choices (which calls this) will return the same value. But these
-    # choices are random. We want them to be the same for the two calls during
-    # level-up, and these values should not change between those two calls.
-    # To get around this, we probably would need to store the choices in
-    # game_state and know to look at them for only levelling up.
-    # TODO: Could probably fix this by using a "Room" to level up
-    random.seed((self.exp, self.current_hp, self.gold, self.reroll_counter))
     choices = [""]
     reroll_trait_level = self.traits["Self-Improvement"]
     reroll_chance = float(reroll_trait_level) / (reroll_trait_level + 1)
@@ -345,14 +336,6 @@ class Character(object):
     return True
 
   def get_skill_choices(self):
-    # TODO: DIRTY DIRTY HACK
-    # The problem is, in the game_state, it's assumed that multiple calls to
-    # get_choices (which calls this) will return the same value. But these
-    # choices are random. We want them to be the same for the two calls during
-    # level-up, and these values should not change between those two calls.
-    # To get around this, we probably would need to store the choices in
-    # game_state and know to look at them for only levelling up.
-    # TODO: Could probably fix this by using a "Room" to level up
     # TODO: Have one of the skills be a new one, even if character has all
     #       three skills? In this case, we'd have to replace one of the existing
     #       skills, which might get tricky.
