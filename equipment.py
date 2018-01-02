@@ -1,5 +1,4 @@
 import random
-import collections
 
 # TODO: Make stats always be in a specific order [OrderedDict or array]
 
@@ -8,8 +7,8 @@ STATS = ["Strength", "Stamina", "Speed", "Intellect"]
 DEFENSES = ["Defense", "Magic Defense"]
 SLOTS = ["Weapon", "Helm", "Chest", "Legs", "Accessory"]
 RARITY = ["Common", "Uncommon", "Rare", "Epic", "Legendary"]
-RARITY_COLORS = ["`160,160,160`", "`0,160,0`", "`0,0,160`", "`160,0,160`",
-                 "`255,140,0`"]
+RARITY_COLORS = ["rgb(160,160,160)", "rgb(0,160,0)", "rgb(0,0,160)", "rgb(160,0,160)",
+                 "rgb(255,140,0)"]
 ABBREVIATIONS = {"Defense": "Def",
                  "Magic Defense": "MDef"}
 WEAPON_STATS = ["Low", "High", "Type"]
@@ -30,11 +29,11 @@ class Equipment(object):
   @staticmethod
   def equipment_comparison_text(current, new):
     pieces = []
-    pieces.append("Current Equipment:\n")
+    pieces.append("Current Equipment:<br>")
     pieces.append(str(current))
-    pieces.append("\nNew Equipment:\n")
+    pieces.append("<br>New Equipment:<br>")
     pieces.append(str(new))
-    pieces.append("\nComparison:\n")
+    pieces.append("<br>Comparison:<br>")
     pieces.append(Equipment.comparison_text(current, new))
     return "".join(pieces)
 
@@ -42,70 +41,69 @@ class Equipment(object):
   def comparison_text(cls, old, new):
     assert old.slot == new.slot
     pieces = []
-    attributes = set().union(old.attributes, new.attributes)
+    # NB: We avoid union, for which Transcrypt seems to only support 1 argument.
+    attributes = set(old.attributes.keys())
+    attributes.update(new.attributes.keys())
     for attr in attributes:
       if attr not in STATS and attr not in DEFENSES:
         continue
-      old_attribute = old.attributes[attr] if attr in old.attributes else 0
-      new_attribute = new.attributes[attr] if attr in new.attributes else 0
+      old_attribute = old.attributes.get(attr, 0) if attr in old.attributes else 0
+      new_attribute = new.attributes.get(attr, 0) if attr in new.attributes else 0
       difference = new_attribute - old_attribute
       if difference != 0:
-        color_string = "`255,0,0`" if difference < 0 else "`0,160,0`"
-        pieces.append("%s%+d %s" % (color_string, difference, attr))
+        color_string = "rgb(255,0,0)" if difference < 0 else "rgb(0,160,0)"
+        pieces.append("<span style=\"color: {}\">{} {}</span>".format(color_string, difference, attr))
     if old.slot == 0:
-      old_average = (old.attributes["Low"] + old.attributes["High"]) / 2.0
-      new_average = (new.attributes["Low"] + new.attributes["High"]) / 2.0
+      old_average = (old.attributes.get("Low", 0) + old.attributes.get("High", 0)) / 2.0
+      new_average = (new.attributes.get("Low", 0) + new.attributes.get("High", 0)) / 2.0
       difference = new_average - old_average
-      color = "`255,0,0`" if difference < 0 else "`0,160,0`"
-      pieces.append("%s%+0.1f average damage" % (color, difference))
-      if old.attributes["Type"] != new.attributes["Type"]:
-        pieces.append("`0,0,0`Weapon type change")
-    return "\n".join(pieces)
+      color = "rgb(255,0,0)" if difference < 0 else "rgb(0,160,0)"
+      pieces.append("<span style=\"color: {}\">{} average damage</span>".format(color, difference))
+      if old.attributes.get("Type", 0) != new.attributes.get("Type", 0):
+        pieces.append("Weapon type change")
+    return "<br>".join(pieces)
 
   def enchant(self):
     self.enchant_count += 1
     enchanted_stat = random.choice(STATS)
-    amount = random.randint(max(1, self.item_level / 4),
-                            max(1, self.item_level / 2))
+    amount = random.randint(max(1, self.item_level // 4),
+                            max(1, self.item_level // 2))
     amount = int(amount * (1.0 + 0.25 * self.rarity))
-    if enchanted_stat in self.attributes:
-      self.attributes[enchanted_stat] += amount
-    else:
-      self.attributes[enchanted_stat] = amount
-    return "%+d %s" % (amount, enchanted_stat)
+    self.attributes[enchanted_stat] = self.attributes.get(enchanted_stat, 0) + amount
+    return "{} {}".format(amount, enchanted_stat)
 
   def get_stat_value(self, stat):
-    return self.attributes[stat]
+    return self.attributes.get(stat, 0)
 
   def reforge(self, level):
     result_pieces = []
     # Stats
     max_gains = (self.rarity + 1) * (level - self.item_level)
     stat_gains = [0, 0, 0, 0]
-    for _ in xrange(max_gains):
+    for _ in range(max_gains):
       stat_gains[random.randint(0, 3)] += 1
     for i in range(4):
-      stat_gains[i] = random.randint(stat_gains[i] / 2, stat_gains[i])
-      self.attributes[STATS[i]] += stat_gains[i]
+      stat_gains[i] = random.randint(stat_gains[i] // 2, stat_gains[i])
+      self.attributes[STATS[i]] = self.attributes.get(STATS[i], 0) + stat_gains[i]
       if stat_gains[i] > 0:
-        result_pieces.append("%+d %s" % (stat_gains[i], STATS[i]))
+        result_pieces.append("{} {}".format(stat_gains[i], STATS[i]))
     # Defenses
     max_gains = 2 * (level - self.item_level)
     def_gains = [0, 0]
-    for _ in xrange(max_gains):
+    for _ in range(max_gains):
       def_gains[random.randint(0, 1)] += 1
     for i in range(2):
-      def_gains[i] = random.randint(def_gains[i] / 2, def_gains[i])
-      self.attributes[DEFENSES[i]] += def_gains[i]
+      def_gains[i] = random.randint(def_gains[i] // 2, def_gains[i])
+      self.attributes[DEFENSES[i]] = self.attributes.get(DEFENSES[i], 0) + def_gains[i]
       if def_gains[i] > 0:
-        result_pieces.append("%+d %s" % (def_gains[i], DEFENSES[i]))
+        result_pieces.append("{} {}".format(def_gains[i], DEFENSES[i]))
     # Weapon Stats
     if self.slot == 0:
       rarity_factor = 1.0 + (.1 * self.rarity)
-      low = int((10 + 5 * level) * random.gauss(1, .2) * rarity_factor)
-      high = int((20 + 7 * level) * random.gauss(1, .2) * rarity_factor)
-      old_low = self.attributes["Low"]
-      old_high = self.attributes["High"]
+      low = int((10 + 5 * level) * (.9 + random.random() * .2) * rarity_factor)
+      high = int((20 + 7 * level) * (.9 + random.random() * .2) * rarity_factor)
+      old_low = self.attributes.get("Low", 0)
+      old_high = self.attributes.get("High", 0)
       old_average = (old_low + old_high) / 2.0
       new_low = max(low, old_low)
       new_high = max(high, old_high)
@@ -114,7 +112,7 @@ class Equipment(object):
       new_average = (new_low + new_high) / 2.0
       difference = new_average - old_average
       if difference > 0:
-        result_pieces.append("%+0.1f average damage" % difference)
+        result_pieces.append("{} average damage".format(difference))
       self.attributes["Low"] = new_low
       self.attributes["High"] = new_high
     self.reforge_count += 1
@@ -123,23 +121,25 @@ class Equipment(object):
 
   @classmethod
   def make_stat_value(cls, item_level, rarity):
-    min_stat = max(1, item_level / 2)
+    min_stat = max(1, item_level // 2)
     max_stat = min_stat + item_level + rarity
     return random.randint(min_stat, max_stat)
 
   def get_damage(self):
-    return random.randint(self.attributes["Low"], self.attributes["High"])
+    return random.randint(self.attributes.get("Low", 0), self.attributes.get("High", 0))
 
   def get_damage_type(self):
-    return self.attributes["Type"]
+    return self.attributes.get("Type", 0)
 
   def get_recycled_materials(self):
+    __pragma__ ('opov')
     materials = [0] * len(RARITY)
+    __pragma__ ('noopov')
     count = 0
-    for _ in xrange(self.item_level):
+    for _ in range(self.item_level):
       if random.random() > .7 ** count:
         continue
-      rarity = int(self.rarity + random.gauss(0, 1))
+      rarity = int(self.rarity + random.randint(-2, 2))
       if rarity < 0:
         continue
       if rarity >= len(RARITY):
@@ -151,9 +151,9 @@ class Equipment(object):
   @classmethod
   def materials_string(cls, materials):
     pieces = []
-    for i in xrange(len(materials)):
+    for i in range(len(materials)):
       if materials[i] > 0:
-        pieces.append("%d %s materials" % (materials[i], RARITY[i]))
+        pieces.append("{} {} materials".format(materials[i], RARITY[i]))
     if pieces:
       return ", ".join(pieces)
     else:
@@ -161,17 +161,19 @@ class Equipment(object):
 
   def get_value(self):
     value = self.item_level * 25
+    __pragma__ ('opov')
     for attribute in STATS + DEFENSES:
-      value += self.attributes[attribute] ** 2
+      value += self.attributes.get(attribute, 0) ** 2
+    __pragma__ ('noopov')
     value *= max(1, self.rarity - 1)
     if self.slot == 0:  # Weapon
-      average_damage = (self.attributes["Low"] + self.attributes["High"]) / 2
+      average_damage = (self.attributes.get("Low", 0) + self.attributes.get("High", 0)) / 2
       value += average_damage
     return value
 
   @classmethod
   def get_new_armor(cls, item_level, slot=None, require=None, rarity=1):
-    attributes = collections.defaultdict(int)
+    attributes = {}
     if slot is None:
       slot = random.randint(0, len(SLOTS) - 1)
     slots = 1 + rarity
@@ -179,14 +181,13 @@ class Equipment(object):
       attributes[require] = cls.make_stat_value(item_level, rarity)
       slots -= 1
     for _ in range(slots):
-      attributes[random.choice(STATS)] += cls.make_stat_value(item_level,
-                                                              rarity)
+      attributes[random.choice(STATS)] = attributes.get(random.choice(STATS), 0) + cls.make_stat_value(item_level, rarity)
     for defense in DEFENSES:
       attributes[defense] = cls.make_stat_value(item_level, rarity)
     if SLOTS[slot] == "Weapon":
       rarity_factor = 1.0 + (.1 * rarity)
-      low = int((10 + 5 * item_level) * random.gauss(1, .2) * rarity_factor)
-      high = int((20 + 7 * item_level) * random.gauss(1, .2) * rarity_factor)
+      low = int((10 + 5 * item_level) * (.9 + random.random() * .2) * rarity_factor)
+      high = int((20 + 7 * item_level) * (.9 + random.random() * .2) * rarity_factor)
       if low > high:
         low, high = high, low
       if low < 1:
@@ -205,26 +206,28 @@ class Equipment(object):
     pieces = []
     pieces.append(SLOTS[self.slot])
     pieces.append(": ")
-    pieces.append(RARITY_COLORS[self.rarity])
-    pieces.append("(%d%s %s) " % (self.item_level,
+    pieces.append("<span style=\"color: {}\">".format(RARITY_COLORS[self.rarity]))
+    __pragma__ ('opov')
+    pieces.append("({}{} {}) ".format(self.item_level,
                                   "*" * self.enchant_count,
                                   RARITY[self.rarity][0]))
+    __pragma__ ('noopov')
     if SLOTS[self.slot] == "Weapon":
-      pieces.append("(%s %d-%d) " % (self.attributes["Type"],
-                                     self.attributes["Low"],
-                                     self.attributes["High"]))
+      pieces.append("({} {}-{}) ".format(self.attributes.get("Type", 0),
+                                     self.attributes.get("Low", 0),
+                                     self.attributes.get("High", 0)))
     defense_pieces = []
     stat_pieces = []
-    for attr in self.attributes:
+    for attr in self.attributes.keys():
       if attr in STATS:
-        if self.attributes[attr] > 0:
-          stat_pieces.append("%+d %s " % (self.attributes[attr], attr))
+        if self.attributes.get(attr, 0) > 0:
+          stat_pieces.append("{} {} ".format(self.attributes.get(attr, 0), attr))
       elif attr in DEFENSES:
-        defense_pieces.append("%d %s" % (self.attributes[attr],
+        defense_pieces.append("{} {}".format(self.attributes.get(attr, 0),
                                          ABBREVIATIONS[attr]))
       else:
         assert attr in WEAPON_STATS
-    pieces.append("(%s) " % " / ".join(defense_pieces))
+    pieces.append("({}) ".format(" / ".join(defense_pieces)))
     pieces.append("".join(stat_pieces))
-    pieces.append("`0,0,0`")
+    pieces.append("</span>")
     return "".join(pieces)

@@ -1,5 +1,4 @@
 import random
-import collections
 from skills import SKILLS, SKILL_NAMES
 from equipment import Equipment, RARITY
 from effect import Effect, Buff, Debuff
@@ -23,17 +22,26 @@ TRAITS = {"Beefy!": "Increase physical damage",
           "Libra": "See monster stats",
          }
 
-GREEN_HP = "`0,160,0`"
-YELLOW_HP = "`200,200,0`"
-ORANGE_HP = "`224,136,20`"
-RED_HP = "`255,0,0`"
-BLACK = "`0,0,0`"
+GREEN_HP = "rgb(0,160,0)"
+YELLOW_HP = "rgb(200,200,0)"
+ORANGE_HP = "rgb(224,136,20)"
+RED_HP = "rgb(255,0,0)"
 
 # TRAITS:
 # TODO: There are more on the sheet
 # -- Increased Stats
 # -- Lightning Strike (chance to automatically go again after an attack)
 # -- Dodge (chance to avoid all damage from an attack)
+
+def min_roll_n_times(n):
+  # NB: Unrolled version of:
+  #return roll = min(random.random() for _ in range(n))
+  roll = 1.0
+  for _ in range(n):
+    r = random.random()
+    if r < roll:
+      roll = r
+  return roll
 
 class Character(object):
   def __init__(self):
@@ -53,16 +61,18 @@ class Character(object):
     self.current_sp = self.max_sp
     self.level = 1
     self.exp = 0
+    __pragma__ ('opov')
     self.materials = [0] * len(RARITY)
+    __pragma__ ('noopov')
     self.buffs = []
     self.debuffs = []
     self.runes = 0
-    self.traits = collections.defaultdict(int)
+    self.traits = {}
     random.seed()
     self.reroll_counter = random.randint(0, 1000000)
 
   def colored_hp(self):
-    hp_percent = self.current_hp * 100 / self.max_hp
+    hp_percent = self.current_hp * 100 // self.max_hp
     if hp_percent > 75:
       color = GREEN_HP
     elif hp_percent > 50:
@@ -71,7 +81,7 @@ class Character(object):
       color = ORANGE_HP
     else:
       color = RED_HP
-    return "%s%d / %d%s" % (color, self.current_hp, self.max_hp, BLACK)
+    return "<span style=\"color: {}\">{} / {}</span>".format(color, self.current_hp, self.max_hp)
 
   @classmethod
   def debug_character(cls, level, choice_text):
@@ -98,8 +108,7 @@ class Character(object):
 
   def make_debug_equipment(self, level, choice):
     for i in range(len(self.equipment)):
-      self.equip(Equipment.get_new_armor(level, slot=i, require=choice,
-                                         rarity=3))
+      self.equip(Equipment.get_new_armor(level, i, choice, 3))
 
   def add_item(self, item):
     if len(self.items) >= 3:
@@ -135,9 +144,9 @@ class Character(object):
       if buff.active():
         remaining_buffs.append(buff)
     self.buffs = remaining_buffs
-    restored_hp = self.traits["Regeneration"] * 3 * time_passed
+    restored_hp = self.traits.get("Regeneration", 0) * 3 * time_passed
     # Not used yet
-    restored_sp = self.traits["Clarity of Mind"] * time_passed
+    restored_sp = self.traits.get("Clarity of Mind", 0) * time_passed
     self.restore_hp(restored_hp)
     self.restore_sp(restored_sp)
     self.recalculate_maxes()
@@ -151,65 +160,66 @@ class Character(object):
     self.recalculate_maxes()
 
   def gain_gold(self, amount):
-    amount_gained = amount * (1.00 + (0.05 * self.traits["Merchant Warrior"]))
+    amount_gained = amount * (1.00 + (0.05 * self.traits.get("Merchant Warrior", 0)))
     amount_gained = int(amount_gained)
     self.gold += amount_gained
     return amount_gained
 
   def make_initial_equipment(self, choice):
     for i in range(len(self.equipment)):
-      self.equip(Equipment.get_new_armor(1, slot=i, require=choice))
+      self.equip(Equipment.get_new_armor(1, i, choice))
 
   def __str__(self):
     pieces = []
-    pieces.append("Character:\n")
-    pieces.append("HP: %d / %d\n" % (self.current_hp, self.max_hp))
-    pieces.append("SP: %d / %d\n" % (self.current_sp, self.max_sp))
-    pieces.append("Level: %d " % self.level)
-    pieces.append("(%d / %d)\n" % (self.exp, self.next_level_exp()))
+    pieces.append("Character:<br>")
+    pieces.append("HP: {} / {}<br>".format(self.current_hp, self.max_hp))
+    pieces.append("SP: {} / {}<br>".format(self.current_sp, self.max_sp))
+    pieces.append("Level: {} ".format(self.level))
+    pieces.append("({} / {})<br>".format(self.exp, self.next_level_exp()))
     for stat in STAT_ORDER:
-      pieces.append("%s: %d (%d)  " % (stat, self.get_effective_stat(stat),
+      pieces.append("{}: {} ({})  ".format(stat, self.get_effective_stat(stat),
                                        self.stats[stat]))
-    pieces.append("\n")
-    pieces.append("Equipment:\n")
+    pieces.append("<br>")
+    pieces.append("Equipment:<br>")
     for piece in self.equipment:
-      pieces.append(str(piece) + "\n")
+      pieces.append(str(piece) + "<br>")
     pieces.append("Traits: ")
     if sum(self.traits.values()) == 0:
       pieces.append("None")
     else:
-      for trait in self.traits:
-        if self.traits[trait] > 0:
-          pieces.append("%s: %d  " % (trait, self.traits[trait]))
-    pieces.append("\n")
+      for trait in self.traits.keys():
+        if self.traits.get(trait, 0) > 0:
+          pieces.append("{}: {}  ".format(trait, self.traits.get(trait, 0)))
+    pieces.append("<br>")
     pieces.append("Skills: ")
     if not self.skills:
       pieces.append("None")
     else:
       for skill in self.skills:
-        pieces.append("%s: %d  " % (skill.get_name(), skill.level))
-    pieces.append("\n")
+        pieces.append("{}: {}  ".format(skill.get_name(), skill.level))
+    pieces.append("<br>")
     pieces.append("Materials: ")
     if sum(self.materials) == 0:
-      pieces.append("None\n")
+      pieces.append("None<br>")
     else:
-      for i in xrange(len(self.materials)):
+      for i in range(len(self.materials)):
         if self.materials[i] > 0:
-          pieces.append("%s: %d  " % (RARITY[i], self.materials[i]))
-      pieces.append("\n")
+          pieces.append("{}: {}  ".format(RARITY[i], self.materials[i]))
+      pieces.append("<br>")
     pieces.append("Buffs: ")
+    # NB: Example of a generator function requiring "-e 6" flag.
     pieces.append(", ".join(str(buff) for buff in self.buffs))
     if self.buffs:
-      pieces.append("\n")
+      pieces.append("<br>")
     else:
-      pieces.append("None\n")
+      pieces.append("None<br>")
     pieces.append("Items: ")
     if self.items:
       pieces.append(", ".join(item.get_name() for item in self.items))
-      pieces.append("\n")
+      pieces.append("<br>")
     else:
-      pieces.append("None\n")
-    pieces.append("Corrupted runes: %d" % self.runes)
+      pieces.append("None<br>")
+    pieces.append("Corrupted runes: {}".format(self.runes))
     return "".join(pieces)
 
   def restore_hp(self, amount=None):
@@ -239,8 +249,8 @@ class Character(object):
     self.debuffs = []
     if penalty:
       logs.append("You were found by a passerby, and brought back to town.")
-      lost_gold = self.gold / 2
-      logs.append("You lost %d gold" % lost_gold)
+      lost_gold = self.gold // 2
+      logs.append("You lost {} gold".format(lost_gold))
       self.gold -= lost_gold
       self.buffs = []
 
@@ -283,17 +293,17 @@ class Character(object):
     self.current_sp = min(self.current_sp, self.max_sp)  # Unless max_sp drops
 
   def level_up(self, logs):
-    for stat in self.stats:
+    for stat in self.stats.keys():
       increase = random.randint(1, 3)
       if increase > 0:
         self.stats[stat] += increase
-        logs.append("You have gained %d %s" % (increase, stat))
+        logs.append("You have gained {} {}".format(increase, stat))
     hp_gain = random.randint(10, 20)
     sp_gain = random.randint(5, 10)
     self.base_hp += hp_gain
     self.base_sp += sp_gain
-    logs.append("You have gained %d HP" % hp_gain)
-    logs.append("You have gained %d SP" % sp_gain)
+    logs.append("You have gained {} HP".format(hp_gain))
+    logs.append("You have gained {} SP".format(sp_gain))
     self.recalculate_maxes()
 
   def train_xp(self, level, logs):
@@ -302,37 +312,38 @@ class Character(object):
   def train_stats(self, logs):
     stat = random.choice(self.stats.keys())
     self.stats[stat] += 1
-    logs.append("Gained +1 %s" % stat)
+    logs.append("Gained +1 {}".format(stat))
 
   def gain_materials(self, materials):
-    for i in xrange(len(materials)):
+    for i in range(len(materials)):
       self.materials[i] += materials[i]
 
   def get_trait_choices(self):
     choices = [""]
-    reroll_trait_level = self.traits["Self-Improvement"]
+    reroll_trait_level = self.traits.get("Self-Improvement", 0)
     reroll_chance = float(reroll_trait_level) / (reroll_trait_level + 1)
     if random.random() < reroll_chance:
       choices.append("Get New Traits")
     while len(choices) < 4:
       best_roll, best_trait = 0.0, None
-      for trait in TRAITS:
-        rerolls = max(1, int((self.traits[trait] + 1) ** .5))
-        roll = min(random.random() for _ in range(rerolls))
-        if trait == "Libra" and self.traits[trait] > 0:  # Only one libra level
+      for trait in TRAITS.keys():
+        rerolls = max(1, int((self.traits.get(trait, 0) + 1) ** .5))
+        roll = min_roll_n_times(rerolls)
+        if trait == "Libra" and self.traits.get(trait, 0) > 0:  # Only one libra level
           roll = 0.0
         if roll > best_roll:
           best_roll, best_trait = roll, trait
       if best_trait not in choices:
         choices.append(best_trait)
+
     return choices
 
   def learn_trait(self, trait):
     if trait == "Get New Traits":
       self.reroll_counter += 1
       return False
-    assert trait in TRAITS
-    self.traits[trait] += 1
+    #assert trait in TRAITS
+    self.traits[trait] = self.traits.get(trait, 0) + 1
     return True
 
   def get_skill_choices(self):
@@ -346,7 +357,7 @@ class Character(object):
     if len(self.skills) == 3:
       choices.extend(skill.get_name() for skill in self.skills)
     else:
-      reroll_skill_level = self.traits["Scholar"]
+      reroll_skill_level = self.traits.get("Scholar", 0)
       reroll_chance = float(reroll_skill_level) / (reroll_skill_level + 1)
       if random.random() < reroll_chance:
         choices.append("Get New Skills")
@@ -358,7 +369,7 @@ class Character(object):
             rerolls = 1
           else:
             rerolls = int(current_skill.level ** .5)
-          roll = min(random.random() for _ in range(rerolls))
+          roll = min_roll_n_times(rerolls)
           if roll > best_roll:
             best_roll, best_skill = roll, skill_name
         if best_skill not in choices:
@@ -373,7 +384,7 @@ class Character(object):
 
   def learn_skill(self, skill_name):
     if skill_name == "Improve stats":
-      for stat in self.stats:
+      for stat in self.stats.keys():
         self.stats[stat] += 1
       self.recalculate_maxes()
       return True
@@ -397,7 +408,7 @@ class Character(object):
       return True
 
   def gain_exp(self, exp, encounter_level, logs, level_adjust=True):
-    exp_gained = exp * (1.0 + (0.03 * self.traits["Quick Learner"]))
+    exp_gained = exp * (1.0 + (0.03 * self.traits.get("Quick Learner", 0)))
     level_difference = encounter_level - self.level
     if level_adjust:
       exp_gained = int(exp_gained * (1.03 ** level_difference))
@@ -405,12 +416,12 @@ class Character(object):
     total_xp_gain = int(exp_gained * xp_buff)
     self.exp += total_xp_gain
     added_xp = total_xp_gain - exp_gained
-    logs.append("You have gained %d XP (%+d buffs)" % (exp_gained, added_xp))
+    logs.append("You have gained {} XP ({} buffs)".format(exp_gained, added_xp))
     levels_gained = 0
     while self.exp >= self.next_level_exp():
       self.exp -= self.next_level_exp()
       self.level += 1
-      logs.append("You have reached level %d!" % self.level)
+      logs.append("You have reached level {}!".format(self.level))
       self.level_up(logs)
       levels_gained += 1
     return levels_gained
